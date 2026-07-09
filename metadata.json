@@ -1,0 +1,8 @@
+{
+  "name": "Universal Guard Trust",
+  "description": "A global initiative dedicated to elevating human evolution, uniting conscious beings, and guiding the next era of civilization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

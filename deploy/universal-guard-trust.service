@@ -1,0 +1,15 @@
+[Unit]
+Description=Universal Guard Trust API
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/universal-guard-trust
+EnvironmentFile=/var/www/universal-guard-trust/.env.production
+ExecStart=/usr/bin/node /var/www/universal-guard-trust/server/index.js
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
