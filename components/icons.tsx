@@ -50,8 +50,8 @@ export const AccordionIcon: React.FC<{ isOpen: boolean }> = ({ isOpen }) => (
   </svg>
 );
 
-const IconWrapper: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+const IconWrapper: React.FC<{ children: React.ReactNode, className?: string, strokeWidth?: number }> = ({ children, className, strokeWidth = 1.2 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
         {children}
     </svg>
 );

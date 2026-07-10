@@ -56,7 +56,9 @@ export const getSupabaseUserCount = async (): Promise<number> => {
 };
 
 /**
- * Register a new user atomically into the global Supabase network.
+ * Register a new user ATOMICALLY using the database RPC function.
+ * This uses the atomic PostgreSQL sequence (ugt_id_seq) to generate unique IDs
+ * without race conditions - works universally across client, server, and edge functions.
  */
 export const registerUserInSupabase = async (data: {
   name: string;
@@ -69,79 +71,62 @@ export const registerUserInSupabase = async (data: {
   state: string;
   nation: string;
 }): Promise<UniversalIdRecord> => {
-  // 1. Check for duplicates safely
-  const { data: existing } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('email', data.email.trim().toLowerCase())
-    .maybeSingle();
+  // Use atomic RPC function - handles ID generation, duplicate check, and insert in single transaction
+  const { data: result, error } = await supabase.rpc('register_user_atomic', {
+    p_name: data.name.trim(),
+    p_dob: data.dob,
+    p_email: data.email.trim().toLowerCase(),
+    p_phone: data.phone.trim(),
+    p_pincode: data.pincode.trim(),
+    p_city: data.city.trim(),
+    p_district: data.district.trim(),
+    p_state: data.state.trim(),
+    p_nation: data.nation.trim(),
+  });
 
-  if (existing) {
-    throw new Error('This email is already associated with a Universal ID.');
+  if (error) {
+    // Handle duplicate email error from the RPC function
+    if (error.message?.includes('already associated')) {
+      throw new Error('This email is already associated with a Universal ID.');
+    }
+    throw new Error(error.message || 'Registration failed');
   }
 
-  // 2. Fetch the next increment value to assemble the public UGT sequence token
-  const totalCount = await getSupabaseUserCount();
-  const generatedId = `UGT-${String(totalCount + 1).padStart(6, '0')}`;
-
-  // 3. Write profile transaction out to database cluster
-  const { data: profile, error: insertError } = await supabase
-    .from('profiles')
-    .insert([{
-      universal_id: generatedId,
-      name: data.name.trim(),
-      dob: data.dob,
-      email: data.email.trim().toLowerCase(),
-      phone: data.phone.trim(),
-      pincode: data.pincode.trim(),
-      city: data.city.trim(),
-      district: data.district.trim(),
-      state: data.state.trim(),
-      nation: data.nation.trim()
-    }])
-    .select('*')
-    .single();
-
-  if (insertError) throw new Error(insertError.message);
-
-  // 4. Fire the calculation logic function to return computed real-time spatial positioning metrics
-  const { data: standings, error: rpcError } = await supabase
-    .rpc('calculate_universal_standings', { target_uid: profile.universal_id });
-
-  if (rpcError || !standings || standings.length === 0) {
-    throw new Error(rpcError?.message || 'Failed calculating live universal ranks.');
+  if (!result || result.length === 0) {
+    throw new Error('Registration failed - no data returned');
   }
 
+  const profile = result[0];
   setActiveSupabaseUserId(profile.universal_id);
-  return buildRecord(profile, standings[0]);
+  return buildRecord(profile, profile);
 };
 
 /**
  * Log a user in across devices securely using either their email address or unique ID.
+ * Uses atomic RPC function for consistent login with ranks calculation.
  */
 export const loginUserInSupabase = async (identifier: string): Promise<UniversalIdRecord> => {
   const cleanInput = identifier.trim().toLowerCase();
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .or(`universal_id.ilike.${cleanInput},email.eq.${cleanInput}`)
-    .maybeSingle();
+  // Use atomic RPC function for login - handles lookup and ranks in single call
+  const { data: result, error } = await supabase.rpc('login_user_atomic', {
+    p_identifier: cleanInput,
+  });
 
-  if (profileError || !profile) {
+  if (error) {
+    if (error.message?.includes('not found')) {
+      throw new Error('Universal ID or Email not found. Please check spelling or register first.');
+    }
+    throw new Error(error.message || 'Login failed');
+  }
+
+  if (!result || result.length === 0) {
     throw new Error('Universal ID or Email not found. Please check spelling or register first.');
   }
 
-  // Calculate ranks dynamically using live chronological positions
-  const { data: standings, error: rpcError } = await supabase
-    .rpc('calculate_universal_standings', { target_uid: profile.universal_id });
-
-  if (rpcError || !standings || standings.length === 0) {
-    throw new Error('Failed gathering positional database metrics.');
-  }
-
+  const profile = result[0];
   setActiveSupabaseUserId(profile.universal_id);
-  return buildRecord(profile, standings[0]);
+  return buildRecord(profile, profile);
 };
 
 /**

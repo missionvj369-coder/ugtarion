@@ -6,13 +6,12 @@ import EssenceSection from './components/EssenceSection';
 import MissionSection from './components/MissionSection';
 import InitiativesSection from './components/InitiativesSection';
 import CollaborationSection from './components/CollaborationSection';
-import RegistrySection from './components/RegistrySection';
+import UniversalIdPortal from './components/UniversalIdPortal';
 import FounderSection from './components/FounderSection';
 import CoFounderSection from './components/CoFounderSection';
 import SupportersSection from './components/SupportersSection';
 import Footer from './components/ContactSection';
 import FadeIn from './components/FadeIn';
-import UniversalIdModal from './components/UniversalIdModal';
 
 const App: React.FC = () => {
   const [isIdModalOpen, setIsIdModalOpen] = useState(false);
@@ -30,13 +29,13 @@ const App: React.FC = () => {
         <MissionSection />
         <InitiativesSection />
         <CollaborationSection />
-        <FadeIn><RegistrySection /></FadeIn>
+        <FadeIn><UniversalIdPortal /></FadeIn>
         <FadeIn><FounderSection /></FadeIn>
         <FadeIn><CoFounderSection /></FadeIn>
         <FadeIn><SupportersSection /></FadeIn>
         <Footer />
       </main>
-      <UniversalIdModal isOpen={isIdModalOpen} onClose={closeIdModal} />
+      <UniversalIdPortal isModal isOpen={isIdModalOpen} onClose={closeIdModal} />
     </div>
   );
 };
