@@ -33,6 +33,11 @@ CREATE INDEX IF NOT EXISTS idx_profiles_pincode ON public.profiles(pincode);
 -- Enable Row Level Security
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (PostgreSQL doesn't support CREATE POLICY IF NOT EXISTS)
+DROP POLICY IF EXISTS "Allow public read access" ON public.profiles;
+DROP POLICY IF EXISTS "Allow public insert" ON public.profiles;
+DROP POLICY IF EXISTS "Allow service role full access" ON public.profiles;
+
 -- Policy: Allow anon key to read (for public registry count)
 CREATE POLICY "Allow public read access" ON public.profiles
     FOR SELECT USING (true);
