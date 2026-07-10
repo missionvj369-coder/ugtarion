@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Globe, 
@@ -23,7 +23,33 @@ import {
   AlertCircle,
   CheckCircle,
   WifiOff,
-  Server
+  Server,
+  Copy,
+  Printer,
+  Eye,
+  EyeOff,
+  MapPin,
+  Hash,
+  Award,
+  Star,
+  Layers,
+  Fingerprint,
+  Lock,
+  Unlock,
+  Zap,
+  Crown,
+  Target,
+  Compass,
+  Home,
+  Building2,
+  Map,
+  Grid,
+  Settings,
+  RefreshCw,
+  ExternalLink,
+  Maximize2,
+  Minimize2,
+  Flag
 } from 'lucide-react';
 import { 
   getRegistryCount, 
@@ -54,31 +80,25 @@ function classifyError(error: any): ApiError {
   apiError.code = error?.code;
   apiError.status = error?.status;
   
-  // Network errors
   if (error instanceof TypeError && error.message.includes('fetch')) {
     apiError.isNetworkError = true;
     apiError.message = 'Network error: Unable to connect to the registry. Please check your internet connection.';
   }
-  // Supabase auth errors
   else if (error?.message?.includes('JWT') || error?.message?.includes('auth') || error?.status === 401) {
     apiError.isAuthError = true;
     apiError.message = 'Authentication failed. Please try logging in again.';
   }
-  // Supabase RLS / permission errors
   else if (error?.message?.includes('row-level security') || error?.message?.includes('permission') || error?.status === 403) {
     apiError.isAuthError = true;
     apiError.message = 'Access denied. Please check your credentials or contact support.';
   }
-  // Server errors
   else if (error?.status >= 500 || error?.message?.includes('500') || error?.message?.includes('server')) {
     apiError.isServerError = true;
     apiError.message = 'Registry server error. Please try again in a moment.';
   }
-  // Duplicate entry
   else if (error?.message?.includes('duplicate') || error?.message?.includes('already exists') || error?.code === '23505') {
     apiError.message = 'This email or phone is already registered. Please use a different one or log in.';
   }
-  // Network timeout
   else if (error?.name === 'AbortError' || error?.message?.includes('timeout')) {
     apiError.isNetworkError = true;
     apiError.message = 'Request timed out. Please check your connection and try again.';
@@ -97,33 +117,336 @@ async function withRetry<T>(
   } catch (error) {
     const apiError = classifyError(error);
     
-    // Don't retry auth errors or client errors (4xx)
     if (apiError.isAuthError || (apiError.status && apiError.status >= 400 && apiError.status < 500)) {
       throw apiError;
     }
     
-    // Don't retry if no retries left
     if (retries <= 0) {
       throw apiError;
     }
     
-    // Wait before retry
     await new Promise(resolve => setTimeout(resolve, delay));
-    
-    // Retry with exponential backoff
     return withRetry(fn, retries - 1, delay * 2);
   }
 }
 
 interface UniversalIdPortalProps {
-  /** If true, renders as a modal; if false, renders as an inline section */
   isModal?: boolean;
-  /** Modal visibility control (only used when isModal=true) */
   isOpen?: boolean;
   onClose?: () => void;
-  /** Optional callback when user logs in/out */
   onAuthChange?: (user: UniversalIdRecord | null) => void;
 }
+
+  // Professional ID Card Component - Memoized for performance
+  // Premium design following ISO 7810 ID-1 standard (credit card format)
+  const ProfessionalIdCard = React.memo(({ 
+    user, 
+    onCopy, 
+    onPrint, 
+    copied,
+    showQR = true 
+  }: { 
+    user: UniversalIdRecord; 
+    onCopy: () => void;
+    onPrint: () => void;
+    copied: boolean;
+    showQR?: boolean;
+  }) => {
+    const cardRef = useRef<HTMLDivElement>(null);
+    
+    // Generate QR code data URL
+    const qrDataUrl = useMemo(() => {
+      if (!showQR) return '';
+      const qrText = `${window.location.origin}/verify/${user.id}`;
+      // Using a simple QR code service - in production, use a proper QR library
+      return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(qrText)}&margin=2&color=0f0f1a&bgcolor=transparent`;
+    }, [user.id, showQR]);
+
+    const formatDate = (dateStr: string) => {
+      try {
+        return new Date(dateStr).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric' 
+        });
+      } catch {
+        return dateStr;
+      }
+    };
+
+    const formatRank = (rank: number) => `#${rank.toLocaleString()}`;
+
+    return (
+      <div 
+        ref={cardRef}
+        className="relative w-full max-w-sm aspect-[1.586/1] rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800/60 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] print:shadow-none print:border-0"
+        style={{ 
+          // Credit card aspect ratio (ISO 7810 ID-1: 85.60 × 53.98 mm)
+          width: '100%',
+          maxWidth: '340px',
+        }}
+        role="img"
+        aria-label={`Universal ID Card for ${user.name}, ID: ${user.id}`}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onCopy();
+          }
+        }}
+      >
+      {/* ===== LAYER 1: Base Card Material (Carbon Fiber Texture) ===== */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="absolute inset-0 bg-zinc-950" />
+        {/* Carbon fiber micro-pattern */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='8' height='8' viewBox='0 0 8 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h4v4H0V0zm4 4h4v4H4V4z' fill='%23ffffff'/%3E%3C/svg%3E")`,
+          backgroundSize: '16px 16px'
+        }} />
+        {/* Subtle vertical grain */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='1' height='4' viewBox='0 0 1 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0V0zm0 2h1v1H0V2z' fill='%23ffffff'/%3E%3C/svg%3E")`,
+          backgroundSize: '2px 8px'
+        }} />
+      </div>
+
+      {/* ===== LAYER 2: Security Guilloche Pattern (Fine Line Work) ===== */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <svg className="absolute inset-0 w-full h-full opacity-5" viewBox="0 0 340 214" preserveAspectRatio="none">
+          <defs>
+            <pattern id="guilloche" patternUnits="userSpaceOnUse" width="40" height="40">
+              <path d="M0,20 Q20,0 40,20 Q20,40 0,20" fill="none" stroke="currentColor" strokeWidth="0.3"/>
+              <path d="M20,0 Q40,20 20,40 Q0,20 20,0" fill="none" stroke="currentColor" strokeWidth="0.3"/>
+            </pattern>
+          </defs>
+          <rect width="340" height="214" fill="url(#guilloche)" stroke="none" />
+        </svg>
+        {/* Rainbow holographic foil strip */}
+        <div className="absolute left-0 top-0 bottom-0 w-1/3 bg-gradient-to-b from-indigo-500/15 via-purple-500/10 to-amber-500/15" />
+        {/* Holographic shimmer sweep */}
+        <div className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] bg-gradient-to-br from-transparent via-white/5 to-transparent animate-shimmer" style={{ animationDuration: '4s' }} />
+      </div>
+
+      {/* ===== LAYER 3: UV Security Features (Visible in print) ===== */}
+      <div className="absolute inset-0 pointer-events-none print:block hidden" aria-hidden="true">
+        {/* UV fluorescent fibers */}
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='340' height='214' viewBox='0 0 340 214' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10,50 Q50,30 90,50 Q130,70 170,50 Q210,30 250,50 Q290,70 330,50' fill='none' stroke='%2300ffff' stroke-width='0.5' opacity='0.3'/%3E%3Cpath d='M10,100 Q50,80 90,100 Q130,120 170,100 Q210,80 250,100 Q290,120 330,100' fill='none' stroke='%23ff00ff' stroke-width='0.5' opacity='0.3'/%3E%3Cpath d='M10,150 Q50,130 90,150 Q130,170 170,150 Q210,130 250,150 Q290,170 330,150' fill='none' stroke='%23ffff00' stroke-width='0.5' opacity='0.3'/%3E%3C/svg%3E")`,
+          backgroundSize: 'cover'
+        }} />
+      </div>
+
+      {/* ===== LAYER 4: Card Frame & Borders ===== */}
+      {/* Outer metallic border */}
+      <div className="absolute inset-0 border border-gradient-to-br from-zinc-600/50 via-zinc-700/30 to-zinc-800/50 rounded-2xl pointer-events-none" aria-hidden="true" />
+      {/* Inner refined border */}
+      <div className="absolute inset-1 border border-zinc-700/40 rounded-xl pointer-events-none" aria-hidden="true" />
+      {/* Inner highlight */}
+      <div className="absolute inset-2 border border-zinc-700/20 rounded-lg pointer-events-none" aria-hidden="true" />
+
+      {/* ===== LAYER 5: Card Content ===== */}
+      <div className="relative z-10 p-5 h-full flex flex-col">
+        {/* ---- HEADER ROW ---- */}
+        <div className="flex justify-between items-start mb-4">
+          {/* Issuer Badge */}
+          <div className="flex items-center gap-2">
+            <div className="relative p-2 rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_2px_8px_rgba(0,0,0,0.3)]">
+              <div className="relative z-10">
+                <Globe className="w-5 h-5 text-indigo-300 drop-shadow-[0_0_4px_rgba(99,102,241,0.4)]" aria-hidden="true" />
+              </div>
+              {/* Badge glow */}
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/10 opacity-50 blur-sm -z-10" />
+            </div>
+            <div>
+              <p className="text-[6px] uppercase tracking-widest text-amber-300 font-mono font-bold leading-none">UNIVERSAL ID CARD</p>
+              <p className="text-[7px] text-zinc-400 font-light leading-none mt-0.5">Universal Guard Trust</p>
+            </div>
+          </div>
+          
+          {/* QR Code - Premium placement */}
+          {showQR && (
+            <div className="relative">
+              <div className="absolute -inset-1.5 rounded-lg bg-gradient-to-br from-indigo-500/30 via-purple-500/20 to-amber-500/30 blur-sm opacity-50" aria-hidden="true" />
+              <div className="relative p-1.5 rounded-lg bg-zinc-900/90 border border-zinc-700/50 backdrop-blur-sm shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+                <img 
+                  src={qrDataUrl} 
+                  alt={`Verification QR for ${user.id}`}
+                  className="w-12 h-12 rounded-sm"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div className="absolute inset-0 rounded-lg border border-zinc-600/30 pointer-events-none" />
+              </div>
+              {/* QR Label */}
+              <p className="absolute bottom-[-14px] left-1/2 -translate-x-1/2 text-[6px] text-zinc-500 font-mono uppercase tracking-wider whitespace-nowrap print:hidden">SCAN TO VERIFY</p>
+            </div>
+          )}
+        </div>
+
+        {/* ---- ID NUMBER SECTION (Primary Visual Anchor) ---- */}
+        <div className="mb-4 flex-1 flex flex-col justify-center relative">
+          {/* Subtle background accent behind ID */}
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-indigo-500/5 rounded-xl pointer-events-none" aria-hidden="true" />
+          
+          <p className="text-[6px] uppercase tracking-widest text-zinc-500 font-mono mb-2 relative z-10">Sovereign Identifier</p>
+          
+          {/* ID Number with premium typography */}
+          <div className="relative z-10">
+            <p className="text-3xl sm:text-4xl font-mono font-black tracking-widest bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-200 bg-clip-text text-transparent select-all drop-shadow-[0_0_12px_rgba(245,158,11,0.4)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+              {user.id}
+            </p>
+            {/* Embossed effect - subtle inner shadow */}
+            <p className="absolute inset-0 text-3xl sm:text-4xl font-mono font-black tracking-widest text-white/5 -translate-y-0.5 pointer-events-none select-none" aria-hidden="true">
+              {user.id}
+            </p>
+          </div>
+          
+          <p className="text-[7px] text-zinc-500 font-mono mt-2 relative z-10">Order #{user.order.toLocaleString()}</p>
+        </div>
+
+        {/* ---- SECURITY DIVIDER ---- */}
+        <div className="relative my-3" role="separator" aria-hidden="true">
+          <div className="absolute inset-y-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-zinc-600/50 to-transparent" />
+          {/* Security microtext */}
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 text-[4px] text-zinc-700 font-mono tracking-widest uppercase text-center print:block hidden" aria-hidden="true">
+            UNIVERSAL GUARD TRUST • SOVEREIGN IDENTITY • UNIVERSAL GUARD TRUST • SOVEREIGN IDENTITY
+          </div>
+        </div>
+
+        {/* ---- HOLDER DETAILS GRID ---- */}
+        <div className="grid grid-cols-2 gap-3 mb-3 relative z-10">
+          {/* Holder Name */}
+          <div className="col-span-2 min-w-0 relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" aria-hidden="true" />
+            <p className="text-[6px] uppercase tracking-widest text-zinc-500 font-mono mb-1">Full Name</p>
+            <p className="text-lg font-semibold text-zinc-100 truncate max-w-full" title={user.name}>{user.name}</p>
+          </div>
+          
+          {/* Date of Birth */}
+          <div className="min-w-0 relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" aria-hidden="true" />
+            <p className="text-[6px] uppercase tracking-widest text-zinc-500 font-mono mb-1">Date of Birth</p>
+            <p className="text-sm font-medium text-zinc-300 font-mono" title={user.dob}>{formatDate(user.dob)}</p>
+          </div>
+          
+          {/* Registration Date */}
+          <div className="min-w-0 relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" aria-hidden="true" />
+            <p className="text-[6px] uppercase tracking-widest text-zinc-500 font-mono mb-1">Registered</p>
+            <p className="text-sm font-medium text-zinc-300 font-mono" title={user.registeredAt}>{formatDate(user.registeredAt)}</p>
+          </div>
+          
+          {/* Universe Rank */}
+          <div className="text-right min-w-0 relative group">
+            <div className="absolute inset-0 bg-gradient-to-l from-indigo-500/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" aria-hidden="true" />
+            <p className="text-[6px] uppercase tracking-widest text-zinc-500 font-mono mb-1">Universe Rank</p>
+            <p className="text-sm font-bold text-indigo-300 font-mono">{formatRank(user.universeRank)}</p>
+          </div>
+        </div>
+
+        {/* ---- NATION ALIGNMENT (Full Width) ---- */}
+        <div className="pt-3 border-t border-zinc-800/40 relative z-10">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className="p-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <MapPin className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+              </div>
+              <p className="text-[6px] uppercase tracking-widest text-zinc-500 font-mono">Nation Alignment</p>
+            </div>
+            <div className="p-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <Crown className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+            </div>
+          </div>
+          <p className="text-lg font-semibold text-zinc-100 truncate max-w-full" title={user.nation}>
+            {user.nation}
+          </p>
+        </div>
+
+        {/* ---- FOOTER: Security & Verification ---- */}
+        <div className="mt-auto pt-3 border-t border-zinc-800/40 relative z-10">
+          <div className="flex items-center justify-between gap-2 mb-3 print:hidden">
+            <button
+              onClick={onCopy}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-zinc-850/80 hover:bg-zinc-850 text-white text-[8px] font-medium tracking-wider uppercase rounded-lg transition-all border border-zinc-700/50 hover:border-zinc-600/50 active:scale-[0.98]"
+              aria-label={copied ? 'ID copied to clipboard' : 'Copy Universal ID to clipboard'}
+            >
+              <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{copied ? 'Copied!' : 'Copy ID'}</span>
+            </button>
+            <button
+              onClick={onPrint}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-medium tracking-wider uppercase rounded-lg transition-all border border-zinc-700/50 hover:border-zinc-600/50 active:scale-[0.98]"
+              aria-label="Print or save ID card"
+            >
+              <Printer className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Print</span>
+            </button>
+          </div>
+          
+          {/* Verification footer */}
+          <div className="flex items-center justify-between text-[6px] text-zinc-500 font-mono print:hidden">
+            <span>SECURE • VERIFIED • SOVEREIGN</span>
+            <span>UGT-{new Date().getFullYear()}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== PRINT-ONLY ELEMENTS ===== */}
+      <div className="print:block hidden absolute inset-0 pointer-events-none" aria-hidden="true">
+        {/* Print crop marks */}
+        <div className="absolute -top-4 -left-4 w-4 h-4 border-t-2 border-l-2 border-zinc-600" />
+        <div className="absolute -top-4 -right-4 w-4 h-4 border-t-2 border-r-2 border-zinc-600" />
+        <div className="absolute -bottom-4 -left-4 w-4 h-4 border-b-2 border-l-2 border-zinc-600" />
+        <div className="absolute -bottom-4 -right-4 w-4 h-4 border-b-2 border-r-2 border-zinc-600" />
+        
+        {/* Verification timestamp */}
+        <div className="absolute bottom-2 right-2 text-[5px] text-zinc-600 font-mono">
+          Verified: {new Date().toISOString().split('T')[0]} • {window.location.origin}/verify/{user.id}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+ProfessionalIdCard.displayName = 'ProfessionalIdCard';
+
+// Rank Detail Card Component
+const RankDetailCard = React.memo(({ 
+  label, 
+  rank, 
+  location, 
+  icon: Icon, 
+  color, 
+  bgColor 
+}: { 
+  label: string;
+  rank: number;
+  location: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bgColor: string;
+}) => (
+  <motion.div 
+    className={`p-3 rounded-xl border ${bgColor} flex flex-col justify-between`}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.2 }}
+    role="listitem"
+    aria-label={`${label}: Rank ${rank.toLocaleString()} in ${location}`}
+  >
+    <div className="flex items-center gap-1.5">
+      <Icon className={`w-3.5 h-3.5 ${color}`} aria-hidden="true" />
+      <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-mono">{label}</span>
+    </div>
+    <div className="mt-2">
+      <span className="text-lg font-bold font-mono" style={{ color }}>#{rank.toLocaleString()}</span>
+      <p className="text-[8px] text-zinc-500 mt-0.5 truncate max-w-full" title={location}>{location}</p>
+    </div>
+  </motion.div>
+));
+
+RankDetailCard.displayName = 'RankDetailCard';
 
 const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   isModal = false,
@@ -135,6 +458,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   const [currentUser, setCurrentUser] = useState<UniversalIdRecord | null>(null);
   const [totalRegistrations, setTotalRegistrations] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   
   // Registration Form States
   const [name, setName] = useState('');
@@ -155,9 +479,14 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   const [success, setSuccess] = useState('');
   const [copied, setCopied] = useState(false);
   const [showRankDetails, setShowRankDetails] = useState(true);
+  const [showFullCard, setShowFullCard] = useState(false);
+  
+  // Refs for focus management
+  const firstInputRef = useRef<HTMLInputElement>(null);
+  const modalContentRef = useRef<HTMLDivElement>(null);
 
   const initRegistry = useCallback(async () => {
-    setIsLoading(true);
+    setIsInitializing(true);
     setError('');
     try {
       const count = await withRetry(() => getRegistryCount());
@@ -177,6 +506,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
       setError(apiError.message || 'Failed to sync with the registry. Please check your connection.');
       onAuthChange?.(null);
     } finally {
+      setIsInitializing(false);
       setIsLoading(false);
     }
   }, [onAuthChange]);
@@ -186,6 +516,42 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
       initRegistry();
     }
   }, [isModal, isOpen, initRegistry]);
+
+  // Focus first input when modal opens
+  useEffect(() => {
+    if (isModal && isOpen && firstInputRef.current) {
+      firstInputRef.current.focus();
+    }
+  }, [isModal, isOpen]);
+
+  // Trap focus in modal
+  useEffect(() => {
+    if (!isModal || !isOpen) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab' && modalContentRef.current) {
+        const focusableElements = modalContentRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+      if (e.key === 'Escape') {
+        onClose?.();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isModal, isOpen, onClose]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,40 +646,49 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const downloadMockCard = () => {
-    if (!currentUser) return;
+  const printCard = () => {
     window.print();
   };
 
   const renderContent = () => (
     <>
-      {isLoading && !currentUser ? (
-        <div className="flex flex-col items-center justify-center py-20 space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+      {(isLoading || isInitializing) && !currentUser ? (
+        <div className="flex flex-col items-center justify-center py-16 space-y-4" role="status" aria-live="polite">
+          <Loader2 className="w-10 h-10 animate-spin text-indigo-400" aria-hidden="true" />
           <p className="text-zinc-400 text-xs font-mono uppercase tracking-widest">Accessing Registry Collective...</p>
         </div>
       ) : (
         <div className="h-full flex flex-col justify-between">
           {/* Form Navigation Tabs */}
           {activeTab !== 'dashboard' && (
-            <div className="space-y-6">
-              <div className="flex bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/80 max-w-xs">
+            <div className="space-y-6" role="tablist" aria-label="Authentication methods">
+              <div className="flex bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/80 max-w-xs" role="group">
                 <button
                   onClick={() => { setActiveTab('register'); setError(''); }}
                   disabled={isLoading}
-                  className={`flex-1 py-2 text-xs font-medium tracking-wide rounded-lg transition-all duration-300 ${
+                  role="tab"
+                  aria-selected={activeTab === 'register'}
+                  aria-controls="register-panel"
+                  id="register-tab"
+                  className={`flex-1 py-2.5 text-xs font-medium tracking-wide rounded-lg transition-all duration-300 ${
                     activeTab === 'register' ? 'bg-zinc-850 text-white shadow' : 'text-zinc-400 hover:text-white'
                   }`}
                 >
+                  <UserPlus className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
                   Claim ID
                 </button>
                 <button
                   onClick={() => { setActiveTab('login'); setError(''); }}
                   disabled={isLoading}
-                  className={`flex-1 py-2 text-xs font-medium tracking-wide rounded-lg transition-all duration-300 ${
+                  role="tab"
+                  aria-selected={activeTab === 'login'}
+                  aria-controls="login-panel"
+                  id="login-tab"
+                  className={`flex-1 py-2.5 text-xs font-medium tracking-wide rounded-lg transition-all duration-300 ${
                     activeTab === 'login' ? 'bg-zinc-850 text-white shadow' : 'text-zinc-400 hover:text-white'
                   }`}
                 >
+                  <LogIn className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
                   Enter Identity
                 </button>
               </div>
@@ -321,167 +696,196 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
               {/* Feedback messages */}
               {error && (
                 <motion.div 
-                  className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-light"
+                  className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-light flex items-start gap-2"
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
+                  role="alert"
+                  aria-live="assertive"
                 >
-                  {error}
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>{error}</span>
                 </motion.div>
               )}
 
               {success && (
                 <motion.div 
-                  className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-light"
+                  className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-light flex items-start gap-2"
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
+                  role="status"
+                  aria-live="polite"
                 >
-                  {success}
+                  <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>{success}</span>
                 </motion.div>
               )}
 
               {activeTab === 'register' ? (
                 /* REGISTER FORM */
-                <form onSubmit={handleRegister} className="space-y-4">
+                <form onSubmit={handleRegister} id="register-panel" role="tabpanel" aria-labelledby="register-tab" className="space-y-4" autoComplete="on">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-semibold font-mono">Sovereign Full Name</label>
+                      <label htmlFor="reg-name" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-semibold font-mono">Sovereign Full Name</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-zinc-500"><User className="w-4 h-4" /></span>
+                        <span className="absolute left-3 top-2.5 text-zinc-500" aria-hidden="true"><User className="w-4 h-4" /></span>
                         <input 
+                          ref={firstInputRef}
+                          id="reg-name"
                           type="text" 
                           required
                           disabled={isLoading}
+                          autoComplete="name"
                           placeholder="e.g. Nicolaus Copernicus"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs font-light transition-all outline-none"
+                          className="w-full pl-9 pr-4 py-2.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs font-light transition-all outline-none"
+                          aria-describedby="reg-name-hint"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-semibold font-mono">Date of Birth</label>
+                      <label htmlFor="reg-dob" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-semibold font-mono">Date of Birth</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-zinc-500"><Calendar className="w-4 h-4" /></span>
+                        <span className="absolute left-3 top-2.5 text-zinc-500" aria-hidden="true"><Calendar className="w-4 h-4" /></span>
                         <input 
+                          id="reg-dob"
                           type="date" 
                           required
                           disabled={isLoading}
+                          autoComplete="bday"
                           value={dob}
                           onChange={(e) => setDob(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs font-light transition-all outline-none"
+                          className="w-full pl-9 pr-4 py-2.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs font-light transition-all outline-none"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-semibold font-mono">Secure Email Address</label>
+                      <label htmlFor="reg-email" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-semibold font-mono">Secure Email Address</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-zinc-500"><Mail className="w-4 h-4" /></span>
+                        <span className="absolute left-3 top-2.5 text-zinc-500" aria-hidden="true"><Mail className="w-4 h-4" /></span>
                         <input 
+                          id="reg-email"
                           type="email" 
                           required
                           disabled={isLoading}
+                          autoComplete="email"
                           placeholder="e.g. copernicus@universe.trust"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs font-light transition-all outline-none"
+                          className="w-full pl-9 pr-4 py-2.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs font-light transition-all outline-none"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-semibold font-mono">Phone Number</label>
+                      <label htmlFor="reg-phone" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-semibold font-mono">Phone Number</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-zinc-500"><Phone className="w-4 h-4" /></span>
+                        <span className="absolute left-3 top-2.5 text-zinc-500" aria-hidden="true"><Phone className="w-4 h-4" /></span>
                         <input 
+                          id="reg-phone"
                           type="tel" 
                           required
                           disabled={isLoading}
+                          autoComplete="tel"
                           placeholder="e.g. +48 123 456 789"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs font-light transition-all outline-none"
+                          className="w-full pl-9 pr-4 py-2.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs font-light transition-all outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Geographic details */}
-                  <div className="pt-2 border-t border-zinc-800/40">
-                    <p className="text-[10px] uppercase tracking-widest text-indigo-400 mb-3 font-semibold font-mono">Geographic Alignment</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">Nation</label>
-                        <input 
-                          type="text" 
-                          required
-                          disabled={isLoading}
-                          placeholder="e.g. Poland"
-                          value={nation}
-                          onChange={(e) => setNation(e.target.value)}
-                          className="w-full px-3 py-1.5 bg-zinc-950/60 border border-zinc-800 rounded-lg text-white text-xs font-light focus:border-indigo-500 outline-none transition-all"
-                        />
-                      </div>
+                    {/* Geographic details - Improved mobile layout */}
+                    <div className="pt-2 border-t border-zinc-800/40">
+                      <p className="text-[10px] uppercase tracking-widest text-indigo-400 mb-3 font-semibold font-mono flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
+                        Geographic Alignment
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div className="sm:col-span-2 lg:col-span-1">
+                          <label htmlFor="reg-nation" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">Nation</label>
+                          <input 
+                            id="reg-nation"
+                            type="text" 
+                            required
+                            disabled={isLoading}
+                            autoComplete="country"
+                            placeholder="e.g. Poland"
+                            value={nation}
+                            onChange={(e) => setNation(e.target.value)}
+                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">State / Region</label>
-                        <input 
-                          type="text" 
-                          required
-                          disabled={isLoading}
-                          placeholder="e.g. Warmia"
-                          value={state}
-                          onChange={(e) => setState(e.target.value)}
-                          className="w-full px-3 py-1.5 bg-zinc-950/60 border border-zinc-800 rounded-lg text-white text-xs font-light focus:border-indigo-500 outline-none transition-all"
-                        />
-                      </div>
+                        <div className="sm:col-span-2 lg:col-span-1">
+                          <label htmlFor="reg-state" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">State / Region</label>
+                          <input 
+                            id="reg-state"
+                            type="text" 
+                            required
+                            disabled={isLoading}
+                            autoComplete="address-level1"
+                            placeholder="e.g. Warmia"
+                            value={state}
+                            onChange={(e) => setState(e.target.value)}
+                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">District</label>
-                        <input 
-                          type="text" 
-                          required
-                          disabled={isLoading}
-                          placeholder="e.g. Frombork"
-                          value={district}
-                          onChange={(e) => setDistrict(e.target.value)}
-                          className="w-full px-3 py-1.5 bg-zinc-950/60 border border-zinc-800 rounded-lg text-white text-xs font-light focus:border-indigo-500 outline-none transition-all"
-                        />
-                      </div>
+                        <div className="sm:col-span-2 lg:col-span-1">
+                          <label htmlFor="reg-district" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">District</label>
+                          <input 
+                            id="reg-district"
+                            type="text" 
+                            required
+                            disabled={isLoading}
+                            autoComplete="address-level2"
+                            placeholder="e.g. Frombork"
+                            value={district}
+                            onChange={(e) => setDistrict(e.target.value)}
+                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">City / Town</label>
-                        <input 
-                          type="text" 
-                          required
-                          disabled={isLoading}
-                          placeholder="e.g. Torun"
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          className="w-full px-3 py-1.5 bg-zinc-950/60 border border-zinc-800 rounded-lg text-white text-xs font-light focus:border-indigo-500 outline-none transition-all"
-                        />
-                      </div>
+                        <div className="sm:col-span-2 lg:col-span-1">
+                          <label htmlFor="reg-city" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">City / Town</label>
+                          <input 
+                            id="reg-city"
+                            type="text" 
+                            required
+                            disabled={isLoading}
+                            autoComplete="address-level3"
+                            placeholder="e.g. Torun"
+                            value={city}
+                            onChange={(e) => setCity(e.target.value)}
+                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">Pincode</label>
-                        <input 
-                          type="text" 
-                          required
-                          disabled={isLoading}
-                          placeholder="e.g. 87-100"
-                          value={pincode}
-                          onChange={(e) => setPincode(e.target.value)}
-                          className="w-full px-3 py-1.5 bg-zinc-950/60 border border-zinc-800 rounded-lg text-white text-xs font-light focus:border-indigo-500 outline-none transition-all"
-                        />
+                        <div className="sm:col-span-2 lg:col-span-1">
+                          <label htmlFor="reg-pincode" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">Pincode</label>
+                          <input 
+                            id="reg-pincode"
+                            type="text" 
+                            required
+                            disabled={isLoading}
+                            autoComplete="postal-code"
+                            placeholder="e.g. 87-100"
+                            value={pincode}
+                            onChange={(e) => setPincode(e.target.value)}
+                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-white text-zinc-950 hover:bg-zinc-100 font-medium py-3 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
+                    className="w-full bg-white text-zinc-950 hover:bg-zinc-100 font-medium py-3.5 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
                   >
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
@@ -493,19 +897,22 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                 </form>
               ) : (
                 /* LOGIN FORM */
-                <form onSubmit={handleLogin} className="space-y-6 pt-4">
+                <form onSubmit={handleLogin} id="login-panel" role="tabpanel" aria-labelledby="login-tab" className="space-y-6 pt-4">
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-2 font-semibold font-mono">Enter Universal ID or Registered Email</label>
+                    <label htmlFor="login-identifier" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-2 font-semibold font-mono">Enter Universal ID or Registered Email</label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-3.5 text-zinc-500"><Globe className="w-4 h-4" /></span>
+                      <span className="absolute left-3.5 top-3.5 text-zinc-500" aria-hidden="true"><Globe className="w-4 h-4" /></span>
                       <input 
+                        ref={firstInputRef}
+                        id="login-identifier"
                         type="text" 
                         required
                         disabled={isLoading}
+                        autoComplete="username"
                         placeholder="e.g. UGT-000001 or tesla@universe.trust"
                         value={loginIdentifier}
                         onChange={(e) => setLoginIdentifier(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs sm:text-sm font-light transition-all outline-none"
+                        className="w-full pl-10 pr-4 py-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs sm:text-sm font-light transition-all outline-none"
                       />
                     </div>
                   </div>
@@ -513,7 +920,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-white text-zinc-950 hover:bg-zinc-100 font-medium py-3 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
+                    className="w-full bg-white text-zinc-950 hover:bg-zinc-100 font-medium py-3.5 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
                   >
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
@@ -531,71 +938,106 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
 
           {/* LOGGED IN / DASHBOARD */}
           {activeTab === 'dashboard' && currentUser && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center pb-3 border-b border-zinc-800/60">
+            <div className="space-y-6" role="region" aria-label="Universal ID Dashboard">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pb-4 border-b border-zinc-800/60">
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-indigo-400 font-semibold font-mono">Sovereign Logged In</p>
                   <h3 className="text-xl font-light">Interactive ID Dashboard</h3>
                 </div>
                 <button 
                   onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 text-xs transition-all border border-transparent hover:border-zinc-700/40"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 text-xs transition-all border border-transparent hover:border-zinc-700/40 self-start"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Dealign / Logout</span>
                 </button>
               </div>
 
-              {/* ID Card */}
+              {/* Professional ID Card */}
               <div className="flex justify-center">
-                <div className="relative w-full max-w-sm h-52 rounded-2xl p-5 overflow-hidden border border-zinc-700/50 shadow-2xl bg-zinc-950">
-                  {/* Holographic gradients */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/30 via-transparent to-amber-950/20 pointer-events-none" />
-                  <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none" />
-                  
-                  {/* Card lines */}
-                  <div className="absolute inset-x-5 top-5 bottom-5 border border-zinc-850 rounded-lg pointer-events-none" />
-                  
-                  {/* Header */}
-                  <div className="flex justify-between items-start relative z-10">
-                    <div>
-                      <p className="text-[8px] uppercase tracking-widest text-amber-400 font-mono font-bold">UNIVERSAL ID CARD</p>
-                      <p className="text-[10px] text-zinc-400 font-light">Universal Guard Trust</p>
-                    </div>
-                    <div className="p-1 rounded bg-zinc-900 border border-zinc-800 text-indigo-400">
-                      <QrCode className="w-4 h-4 opacity-80" />
-                    </div>
-                  </div>
-
-                  {/* Card ID */}
-                  <div className="mt-6 relative z-10">
-                    <p className="text-xl sm:text-2xl font-mono font-bold tracking-widest bg-gradient-to-r from-amber-200 via-indigo-100 to-white bg-clip-text text-transparent">
-                      {currentUser.id}
-                    </p>
-                  </div>
-
-                  {/* Footer Details */}
-                  <div className="absolute bottom-5 left-5 right-5 flex justify-between items-end relative z-10">
-                    <div>
-                      <p className="text-[7px] uppercase tracking-widest text-zinc-500">Sovereign Holder</p>
-                      <p className="text-xs font-semibold text-white tracking-wide truncate max-w-[150px]">{currentUser.name}</p>
-                      <p className="text-[8px] text-zinc-400 font-light font-mono mt-0.5">DOB: {currentUser.dob}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[7px] uppercase tracking-widest text-zinc-500">Nation Alignment</p>
-                      <p className="text-[11px] font-semibold text-zinc-300">{currentUser.nation}</p>
-                    </div>
-                  </div>
-                </div>
+                <ProfessionalIdCard 
+                  user={currentUser} 
+                  onCopy={copyId}
+                  onPrint={printCard}
+                  copied={copied}
+                />
               </div>
 
+              {/* Expandable Full Card View */}
+              <button
+                onClick={() => setShowFullCard(!showFullCard)}
+                className="w-full flex items-center justify-center gap-2 py-2 text-zinc-400 hover:text-indigo-400 text-xs font-medium transition-colors"
+                aria-expanded={showFullCard}
+                aria-controls="full-card-details"
+              >
+                <span>{showFullCard ? 'Collapse' : 'Expand'} Full Card Details</span>
+                {showFullCard ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+
+              <AnimatePresence>
+                {showFullCard && (
+                  <motion.div 
+                    id="full-card-details"
+                    className="space-y-4"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-zinc-950/50 rounded-xl border border-zinc-800/50">
+                      <div className="col-span-2 sm:col-span-3">
+                        <p className="text-[8px] uppercase tracking-widest text-zinc-500 font-mono mb-2">Contact & Verification</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-zinc-500">Email</span>
+                            <span className="text-white truncate" title={currentUser.email}>{currentUser.email}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-zinc-500">Phone</span>
+                            <span className="text-white truncate" title={currentUser.phone}>{currentUser.phone}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-zinc-500">Pincode</span>
+                            <span className="text-white font-mono">{currentUser.pincode}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-zinc-500">Registered</span>
+                            <span className="text-white font-mono">{new Date(currentUser.registeredAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-span-2 sm:col-span-3">
+                        <p className="text-[8px] uppercase tracking-widest text-zinc-500 font-mono mb-2">Full Address</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-zinc-500">City</span>
+                            <span className="text-white truncate" title={currentUser.city}>{currentUser.city}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-zinc-500">District</span>
+                            <span className="text-white truncate" title={currentUser.district}>{currentUser.district}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-zinc-500">State</span>
+                            <span className="text-white truncate" title={currentUser.state}>{currentUser.state}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-zinc-500">Nation</span>
+                            <span className="text-white truncate" title={currentUser.nation}>{currentUser.nation}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Ranks details */}
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-center">
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                   <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold font-mono">Your Order Rankings</p>
                   <button 
                     onClick={() => setShowRankDetails(!showRankDetails)}
-                    className="text-xs text-indigo-400 hover:text-indigo-300"
+                    className="text-xs text-indigo-400 hover:text-indigo-300 self-start"
                   >
                     {showRankDetails ? 'Hide Details' : 'Show Details'}
                   </button>
@@ -604,66 +1046,83 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                 <AnimatePresence>
                   {showRankDetails && (
                     <motion.div 
-                      className="grid grid-cols-2 sm:grid-cols-3 gap-2.5"
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
+                      role="list"
+                      aria-label="Ranking details"
                     >
-                      <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-indigo-500/10 flex flex-col justify-between">
-                        <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-mono">Universe Order</span>
-                        <span className="text-sm sm:text-base font-bold text-indigo-300 font-mono mt-0.5">#{currentUser.universeRank}</span>
-                        <span className="text-[8px] text-zinc-500 mt-0.5">global count</span>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between">
-                        <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-mono">In Nation</span>
-                        <span className="text-sm sm:text-base font-bold text-amber-400 font-mono mt-0.5">#{currentUser.nationRank}</span>
-                        <span className="text-[8px] text-zinc-500 mt-0.5 truncate">{currentUser.nation}</span>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between">
-                        <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-mono">In State</span>
-                        <span className="text-sm sm:text-base font-bold text-zinc-200 font-mono mt-0.5">#{currentUser.stateRank}</span>
-                        <span className="text-[8px] text-zinc-500 mt-0.5 truncate">{currentUser.state}</span>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between">
-                        <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-mono">In District</span>
-                        <span className="text-sm sm:text-base font-bold text-zinc-300 font-mono mt-0.5">#{currentUser.districtRank}</span>
-                        <span className="text-[8px] text-zinc-500 mt-0.5 truncate">{currentUser.district}</span>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between">
-                        <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-mono">In City</span>
-                        <span className="text-sm sm:text-base font-bold text-zinc-300 font-mono mt-0.5">#{currentUser.cityRank}</span>
-                        <span className="text-[8px] text-zinc-500 mt-0.5 truncate">{currentUser.city}</span>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between">
-                        <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-mono">In Pincode</span>
-                        <span className="text-sm sm:text-base font-bold text-zinc-300 font-mono mt-0.5">#{currentUser.pincodeRank}</span>
-                        <span className="text-[8px] text-zinc-500 mt-0.5 truncate">{currentUser.pincode}</span>
-                      </div>
+                      <RankDetailCard
+                        label="Universe Order"
+                        rank={currentUser.universeRank}
+                        location={`${totalRegistrations.toLocaleString()} guardians`}
+                        icon={Globe}
+                        color="text-indigo-300"
+                        bgColor="bg-zinc-950/70 border-indigo-500/10"
+                      />
+                      <RankDetailCard
+                        label="In Nation"
+                        rank={currentUser.nationRank}
+                        location={currentUser.nation}
+                        icon={Flag}
+                        color="text-amber-400"
+                        bgColor="bg-zinc-950/70 border-zinc-800/80"
+                      />
+                      <RankDetailCard
+                        label="In State"
+                        rank={currentUser.stateRank}
+                        location={currentUser.state}
+                        icon={Building2}
+                        color="text-zinc-200"
+                        bgColor="bg-zinc-950/70 border-zinc-800/80"
+                      />
+                      <RankDetailCard
+                        label="In District"
+                        rank={currentUser.districtRank}
+                        location={currentUser.district}
+                        icon={Map}
+                        color="text-zinc-300"
+                        bgColor="bg-zinc-950/70 border-zinc-800/80"
+                      />
+                      <RankDetailCard
+                        label="In City"
+                        rank={currentUser.cityRank}
+                        location={currentUser.city}
+                        icon={Home}
+                        color="text-zinc-300"
+                        bgColor="bg-zinc-950/70 border-zinc-800/80"
+                      />
+                      <RankDetailCard
+                        label="In Pincode"
+                        rank={currentUser.pincodeRank}
+                        location={currentUser.pincode}
+                        icon={Grid}
+                        color="text-zinc-300"
+                        bgColor="bg-zinc-950/70 border-zinc-800/80"
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
               {/* Action Bar */}
-              <div className="flex gap-4 pt-2">
+              <div className="flex gap-3 pt-2">
                 <button
                   onClick={copyId}
-                  className="flex-1 py-2.5 px-4 bg-zinc-850 hover:bg-zinc-850/80 text-white font-medium text-[10px] tracking-wider uppercase rounded-xl transition-all border border-zinc-700/50 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 px-4 bg-zinc-850 hover:bg-zinc-850/80 text-white font-medium text-[10px] tracking-wider uppercase rounded-xl transition-all border border-zinc-700/50 flex items-center justify-center gap-2"
+                  aria-label={copied ? 'ID copied to clipboard' : 'Copy Universal ID to clipboard'}
                 >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>{copied ? 'Copied ID!' : 'Copy ID'}</span>
+                  <Copy className="w-4 h-4" aria-hidden="true" />
+                  <span>{copied ? 'Copied!' : 'Copy ID'}</span>
                 </button>
 
                 <button
-                  onClick={downloadMockCard}
-                  className="flex-1 py-2.5 px-4 bg-white hover:bg-zinc-100 text-zinc-950 font-medium text-[10px] tracking-wider uppercase rounded-xl transition-all flex items-center justify-center gap-2"
+                  onClick={printCard}
+                  className="flex-1 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 font-medium text-[10px] tracking-wider uppercase rounded-xl transition-all flex items-center justify-center gap-2"
+                  aria-label="Print or save ID card"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Printer className="w-4 h-4" aria-hidden="true" />
                   <span>Print / Save</span>
                 </button>
               </div>
@@ -674,6 +1133,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     </>
   );
 
+  // Modal Render
   if (isModal) {
     return (
       <AnimatePresence>
@@ -683,35 +1143,44 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
           >
             <motion.div 
-              className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden flex flex-col max-h-[90vh]"
+              ref={modalContentRef}
+              className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden flex flex-col max-h-[90vh] max-h-[calc(100vh-2rem)]"
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
-              transition={{ type: 'spring', duration: 0.5 }}
+              transition={{ type: 'spring', duration: 0.4, damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Top Branding Bar */}
-              <div className="bg-zinc-900 text-white p-5 flex justify-between items-center print:hidden">
+              <div className="bg-zinc-900 text-white p-4 sm:p-5 flex justify-between items-center print:hidden">
                 <div className="flex items-center gap-3">
-                  <Globe className="w-6 h-6 text-emerald-400 animate-spin-slow" />
+                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                    <Globe className="w-5 h-5 text-emerald-400" aria-hidden="true" />
+                  </div>
                   <div>
-                    <h2 className="font-bold tracking-tight text-lg">Universal Citizenship Portal</h2>
+                    <h2 id="modal-title" className="font-bold tracking-tight text-lg">Universal Citizenship Portal</h2>
                     <p className="text-zinc-400 text-xs">Uniting the world as one shared consciousness</p>
                   </div>
                 </div>
                 <button 
                   onClick={onClose}
-                  className="p-1 rounded-full text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"
+                  className="p-1.5 rounded-full text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"
+                  aria-label="Close portal"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
 
-              {/* Content Body Area */}
-              <div className="p-6 overflow-y-auto flex-1">
+              {/* Content Body Area - Fixed scroll stability for mobile */}
+              <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(100vh - 120px)' }}>
                 {error && (
-                  <div className="p-3 mb-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-medium">
+                  <div className="p-3 mb-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-medium" role="alert">
                     {error}
                   </div>
                 )}
@@ -728,15 +1197,15 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   // Inline section mode
   return (
     <SectionWrapper id="registry-portal">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         {/* Title */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs uppercase tracking-widest text-zinc-400 font-mono font-medium block mb-2.5">Real-Time Registry</span>
-          <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-zinc-900">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+          <span className="text-xs uppercase tracking-widest text-zinc-400 font-mono font-medium block mb-3">Real-Time Registry</span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight text-zinc-900">
             Universal ID Portal
           </h2>
-          <div className="h-0.5 w-12 bg-zinc-800 mx-auto mt-4 mb-5"></div>
-          <p className="text-zinc-500 text-sm sm:text-base font-light leading-relaxed">
+          <div className="h-0.5 w-16 bg-zinc-800 mx-auto mt-5 mb-6"></div>
+          <p className="text-zinc-500 text-sm sm:text-base lg:text-lg font-light leading-relaxed">
             Claims are processed instantly. Securely register to receive your unique cosmic rank and sovereign Universal ID card.
           </p>
         </div>
@@ -747,23 +1216,23 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,_rgba(99,_102,_241,_0.08),_transparent_40%)] pointer-events-none" />
           
           {/* Left panel: Info & Counter */}
-          <div className="p-8 sm:p-10 md:col-span-5 border-b md:border-b-0 md:border-r border-zinc-800/80 bg-zinc-950/40 relative z-10 flex flex-col justify-between">
+          <div className="p-6 sm:p-8 md:p-10 md:col-span-5 border-b md:border-b-0 md:border-r border-zinc-800/80 bg-zinc-950/40 relative z-10 flex flex-col justify-between">
             <div className="space-y-6">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                  <Milestone className="w-5 h-5" />
+                  <Milestone className="w-5 h-5" aria-hidden="true" />
                 </span>
                 <span className="font-semibold tracking-widest text-[10px] uppercase text-indigo-400 font-mono">Live Sync Collective</span>
               </div>
 
-              <h3 className="text-2xl font-light tracking-tight">Claim Your Sovereign Order</h3>
+              <h3 className="text-2xl sm:text-3xl font-light tracking-tight">Claim Your Sovereign Order</h3>
               <p className="text-zinc-400 text-xs sm:text-sm font-light leading-relaxed">
                 Step into a structured identification hierarchy. Your ID is safely generated and stored locally in your personal sandbox.
               </p>
 
               <div className="space-y-4 pt-5 border-t border-zinc-800/40">
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+                  <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">Secure Client Storage</p>
                     <p className="text-zinc-500 text-[11px] font-light">Offline-first sandbox. Registered entirely within your browser for absolute key privacy.</p>
@@ -771,7 +1240,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">Instant Order Ranking</p>
                     <p className="text-zinc-500 text-[11px] font-light">Calculates your entry position automatically on global, national, and local scales.</p>
@@ -783,8 +1252,8 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
             <div className="pt-8 md:pt-0 mt-8 border-t border-zinc-800/50 md:border-t-0">
               <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-mono font-semibold">Total Registered Guardians</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl font-mono font-bold tracking-tight text-indigo-300">
-                  {totalRegistrations}
+                <span className="text-3xl sm:text-4xl font-mono font-bold tracking-tight text-indigo-300">
+                  {totalRegistrations.toLocaleString()}
                 </span>
                 <span className="text-zinc-500 text-xs font-light">verified lives</span>
               </div>
@@ -792,7 +1261,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
           </div>
 
           {/* Right panel: Controls & Form */}
-          <div className="p-8 sm:p-10 md:col-span-7 relative z-10 flex flex-col justify-center bg-zinc-900/40 backdrop-blur-md">
+          <div className="p-6 sm:p-8 md:p-10 md:col-span-7 relative z-10 flex flex-col justify-center bg-zinc-900/40 backdrop-blur-md min-h-[550px]">
             {renderContent()}
           </div>
         </div>
@@ -800,5 +1269,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     </SectionWrapper>
   );
 };
+
+// Flag icon component (using lucide-react Flag)
 
 export default UniversalIdPortal;

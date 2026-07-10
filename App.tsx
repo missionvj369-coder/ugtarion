@@ -22,7 +22,7 @@ const App: React.FC = () => {
   return (
     <div className="bg-transparent text-zinc-800 antialiased">
       <Header onOpenIdModal={openIdModal} />
-      <main>
+      <main id="main-content">
         <HeroSection onOpenIdModal={openIdModal} />
         <FadeIn><GratitudeSection /></FadeIn>
         <EssenceSection />

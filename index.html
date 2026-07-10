@@ -177,6 +177,21 @@
       left: 150%;
     }
 
+    /* Shimmer Animation for ID Card Holographic Effect */
+    @keyframes shimmer {
+      0% { transform: translateX(-100%) rotate(15deg); }
+      100% { transform: translateX(100%) rotate(15deg); }
+    }
+    .animate-shimmer { animation: shimmer 3s ease-in-out infinite; }
+
+    /* Print styles for ID Card */
+    @media print {
+      .print\:hidden { display: none !important; }
+      .print\:block { display: block !important; }
+      @page { margin: 0; size: 3.375in 2.125in; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
     /* Cursor Stardust Effect */
     .stardust-particle {
       position: fixed;
@@ -261,8 +276,13 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-white">
-  <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+  <body class="bg-white">
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium">
+      Skip to main content
+    </a>
+    
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

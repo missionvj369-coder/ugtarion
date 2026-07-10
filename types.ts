@@ -51,3 +51,118 @@ export interface UniversalIdRecord {
   pincodeRank: number;
 }
 
+// Supabase Database Types
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          name: string;
+          dob: string;
+          email: string;
+          phone: string;
+          pincode: string;
+          city: string;
+          district: string;
+          state: string;
+          nation: string;
+          registered_at: string;
+          order: number;
+          universe_rank: number;
+          nation_rank: number;
+          state_rank: number;
+          district_rank: number;
+          city_rank: number;
+          pincode_rank: number;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          dob: string;
+          email: string;
+          phone: string;
+          pincode: string;
+          city: string;
+          district: string;
+          state: string;
+          nation: string;
+          registered_at?: string;
+          order?: number;
+          universe_rank?: number;
+          nation_rank?: number;
+          state_rank?: number;
+          district_rank?: number;
+          city_rank?: number;
+          pincode_rank?: number;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          dob?: string;
+          email?: string;
+          phone?: string;
+          pincode?: string;
+          city?: string;
+          district?: string;
+          state?: string;
+          nation?: string;
+          registered_at?: string;
+          order?: number;
+          universe_rank?: number;
+          nation_rank?: number;
+          state_rank?: number;
+          district_rank?: number;
+          city_rank?: number;
+          pincode_rank?: number;
+        };
+      };
+      standings: {
+        Row: {
+          id: string;
+          profile_id: string;
+          scope: string;
+          scope_value: string;
+          rank: number;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          scope: string;
+          scope_value: string;
+          rank: number;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string;
+          scope?: string;
+          scope_value?: string;
+          rank?: number;
+        };
+      };
+    };
+    Functions: {
+      register_user_atomic: {
+        Args: {
+          p_name: string;
+          p_dob: string;
+          p_email: string;
+          p_phone: string;
+          p_pincode: string;
+          p_city: string;
+          p_district: string;
+          p_state: string;
+          p_nation: string;
+        };
+        Returns: Database['public']['Tables']['profiles']['Row'][];
+      };
+      login_user_atomic: {
+        Args: {
+          p_identifier: string;
+        };
+        Returns: Database['public']['Tables']['profiles']['Row'][];
+      };
+    };
+  };
+}
+

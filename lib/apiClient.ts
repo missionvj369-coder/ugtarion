@@ -3,21 +3,56 @@ const ACTIVE_USER_ID_KEY = 'ugt_supabase_active_user_id';
 
 // Direct Supabase client for fallback when API server is unavailable
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-let supabaseClient: ReturnType<typeof createClient> | null = null;
-function getSupabaseClient() {
-  if (!supabaseClient && SUPABASE_URL && SUPABASE_ANON_KEY) {
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Typed client for table operations (with full type safety)
+let typedSupabaseClient: ReturnType<typeof createClient<Database>> | null = null;
+function getTypedSupabaseClient() {
+  if (!typedSupabaseClient && SUPABASE_URL && SUPABASE_ANON_KEY) {
+    typedSupabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
-  return supabaseClient;
+  return typedSupabaseClient;
+}
+
+// Untyped client for RPC calls (avoids strict type inference issues with function args)
+let untypedSupabaseClient: ReturnType<typeof createClient> | null = null;
+function getUntypedSupabaseClient() {
+  if (!untypedSupabaseClient && SUPABASE_URL && SUPABASE_ANON_KEY) {
+    untypedSupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+  return untypedSupabaseClient;
 }
 
 interface ApiResult<T> {
   error?: string;
   [key: string]: any;
   data?: T;
+}
+
+// Transform snake_case Supabase response to camelCase UniversalIdRecord
+function transformProfile(raw: Database['public']['Tables']['profiles']['Row']): UniversalIdRecord {
+  return {
+    id: raw.id,
+    name: raw.name,
+    dob: raw.dob,
+    email: raw.email,
+    phone: raw.phone,
+    pincode: raw.pincode,
+    city: raw.city,
+    district: raw.district,
+    state: raw.state,
+    nation: raw.nation,
+    registeredAt: raw.registered_at,
+    order: raw.order,
+    universeRank: raw.universe_rank,
+    nationRank: raw.nation_rank,
+    stateRank: raw.state_rank,
+    districtRank: raw.district_rank,
+    cityRank: raw.city_rank,
+    pincodeRank: raw.pincode_rank,
+  };
 }
 
 async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -43,7 +78,7 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
   }
 
   // Fallback to direct Supabase RPC calls
-  const supabase = getSupabaseClient();
+  const supabase = getUntypedSupabaseClient() as any;
   if (!supabase) {
     throw new Error('No API server configured and no Supabase client available');
   }
@@ -69,30 +104,30 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
       p_district: body.district.trim(),
       p_state: body.state.trim(),
       p_nation: body.nation.trim(),
-    } as any);
+    });
     if (error) throw new Error(error.message);
-    if (!data || (data as any[]).length === 0) throw new Error('Registration failed - no data returned');
-    return (data as any[])[0] as T;
+    if (!data || data.length === 0) throw new Error('Registration failed - no data returned');
+    return transformProfile(data[0]) as T;
   }
 
   if (path === '/api/login' && options.method === 'POST') {
     const body = JSON.parse(options.body as string);
     const { data, error } = await supabase.rpc('login_user_atomic', {
       p_identifier: body.identifier.trim().toLowerCase(),
-    } as any);
+    });
     if (error) throw new Error(error.message);
-    if (!data || (data as any[]).length === 0) throw new Error('Universal ID or Email not found. Please check spelling or register first.');
-    return (data as any[])[0] as T;
+    if (!data || data.length === 0) throw new Error('Universal ID or Email not found. Please check spelling or register first.');
+    return transformProfile(data[0]) as T;
   }
 
   if (path.startsWith('/api/profile/') && options.method !== 'POST') {
     const uid = path.split('/api/profile/')[1];
     const { data, error } = await supabase.rpc('login_user_atomic', {
       p_identifier: uid.trim().toLowerCase(),
-    } as any);
+    });
     if (error) throw new Error(error.message);
-    if (!data || (data as any[]).length === 0) throw new Error('Profile not found.');
-    return (data as any[])[0] as T;
+    if (!data || data.length === 0) throw new Error('Profile not found.');
+    return transformProfile(data[0]) as T;
   }
 
   throw new Error(`Unsupported path for direct Supabase fallback: ${path}`);
