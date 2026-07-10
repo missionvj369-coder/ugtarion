@@ -15,6 +15,12 @@ dist-ssr
 # Server-only environment file (contains Supabase service role key)
 .env.server
 
+# Environment files with secrets - never commit these
+.env
+.env.local
+.env.production
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
