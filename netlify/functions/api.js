@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-import { z } from 'zod';
 import dotenv from 'dotenv';
 
 // Load server env for local development (netlify dev)
@@ -12,19 +10,11 @@ import {
   handleRegister,
   handleLogin,
   buildRecord,
+  createSupabaseAdmin,
 } from '../../lib/api-core.js';
 
-// Supabase client with service role key (server-side only)
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY or VITE_SUPABASE_URL/SUPABASE_URL in function environment');
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+// Create Supabase client using shared function (falls back to anon key for local dev)
+const supabase = createSupabaseAdmin();
 
 const defaultCorsHeaders = {
   'Content-Type': 'application/json',

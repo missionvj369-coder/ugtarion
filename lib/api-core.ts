@@ -51,15 +51,24 @@ export const loginSchema = z.object({
 });
 
 // Create Supabase client with service role key (server-side only)
+// Falls back to anon key for local development if service role key not available
 export function createSupabaseAdmin(): SupabaseClient {
   const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
-  if (!url || !serviceKey) {
-    throw new Error('Missing Supabase credentials: VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required');
+  if (!url) {
+    throw new Error('Missing Supabase URL: VITE_SUPABASE_URL or SUPABASE_URL required');
   }
 
-  return createClient(url, serviceKey, {
+  // Use service role key if available (production), otherwise fall back to anon key (local dev)
+  const key = serviceKey || anonKey;
+  
+  if (!key) {
+    throw new Error('Missing Supabase key: SUPABASE_SERVICE_ROLE_KEY (production) or VITE_SUPABASE_ANON_KEY (local dev) required');
+  }
+
+  return createClient(url, key, {
     auth: { persistSession: false },
   });
 }
