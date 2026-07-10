@@ -154,13 +154,51 @@ export interface Database {
           p_state: string;
           p_nation: string;
         };
-        Returns: Database['public']['Tables']['profiles']['Row'][];
+        Returns: {
+          universal_id: string;
+          name: string;
+          dob: string;
+          email: string;
+          phone: string;
+          pincode: string;
+          city: string;
+          district: string;
+          state: string;
+          nation: string;
+          created_at: string;
+          global_order: number;
+          universe_rank: number;
+          nation_rank: number;
+          state_rank: number;
+          district_rank: number;
+          city_rank: number;
+          pincode_rank: number;
+        }[];
       };
       login_user_atomic: {
         Args: {
           p_identifier: string;
         };
-        Returns: Database['public']['Tables']['profiles']['Row'][];
+        Returns: {
+          universal_id: string;
+          name: string;
+          dob: string;
+          email: string;
+          phone: string;
+          pincode: string;
+          city: string;
+          district: string;
+          state: string;
+          nation: string;
+          created_at: string;
+          global_order: number;
+          universe_rank: number;
+          nation_rank: number;
+          state_rank: number;
+          district_rank: number;
+          city_rank: number;
+          pincode_rank: number;
+        }[];
       };
     };
   };

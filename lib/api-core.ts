@@ -167,6 +167,10 @@ export async function handleRegister(
     if (err.message?.includes('already associated')) {
       return { error: 'This email is already associated with a Universal ID.' };
     }
+    // Handle duplicate phone error
+    if (err.message?.includes('duplicate key value violates unique constraint') && err.message?.includes('phone')) {
+      return { error: 'This phone number is already registered with a Universal ID.' };
+    }
     return { error: err.message || 'Registration failed' };
   }
 }

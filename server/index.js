@@ -59,7 +59,7 @@ app.get('/api/profile/:uid', async (req, res) => {
 app.post('/api/register', async (req, res) => {
   const result = await handleRegister(supabase, req.body);
   if (result.error) {
-    const status = result.error.includes('already associated') ? 409 : 500;
+    const status = result.error.includes('already associated') || result.error.includes('phone number is already registered') ? 409 : 500;
     return res.status(status).json({ error: result.error, details: result.details });
   }
   return res.json(result.data);

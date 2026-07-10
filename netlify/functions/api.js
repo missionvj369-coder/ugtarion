@@ -60,7 +60,8 @@ export async function handler(event) {
     if (event.httpMethod === 'POST' && parts[0] === 'register') {
       const body = event.body ? JSON.parse(event.body) : {};
       const result = await handleRegister(supabase, body);
-      return jsonResponse(result.error ? (result.error.includes('already associated') ? 409 : 500) : 200, result.error ? { error: result.error, details: result.details } : result.data);
+      const isDuplicate = result.error && (result.error.includes('already associated') || result.error.includes('already registered'));
+      return jsonResponse(result.error ? (isDuplicate ? 409 : 500) : 200, result.error ? { error: result.error, details: result.details } : result.data);
     }
 
     // POST /login

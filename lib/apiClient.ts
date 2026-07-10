@@ -31,10 +31,30 @@ interface ApiResult<T> {
   data?: T;
 }
 
-// Transform snake_case Supabase response to camelCase UniversalIdRecord
-function transformProfile(raw: Database['public']['Tables']['profiles']['Row']): UniversalIdRecord {
+// Transform RPC response (snake_case from database) to camelCase UniversalIdRecord
+// RPC functions return: universal_id, created_at, global_order, universe_rank, etc.
+function transformProfile(raw: {
+  universal_id: string;
+  name: string;
+  dob: string;
+  email: string;
+  phone: string;
+  pincode: string;
+  city: string;
+  district: string;
+  state: string;
+  nation: string;
+  created_at: string;
+  global_order: number;
+  universe_rank: number;
+  nation_rank: number;
+  state_rank: number;
+  district_rank: number;
+  city_rank: number;
+  pincode_rank: number;
+}): UniversalIdRecord {
   return {
-    id: raw.id,
+    id: raw.universal_id,
     name: raw.name,
     dob: raw.dob,
     email: raw.email,
@@ -44,8 +64,8 @@ function transformProfile(raw: Database['public']['Tables']['profiles']['Row']):
     district: raw.district,
     state: raw.state,
     nation: raw.nation,
-    registeredAt: raw.registered_at,
-    order: raw.order,
+    registeredAt: raw.created_at,
+    order: raw.global_order,
     universeRank: raw.universe_rank,
     nationRank: raw.nation_rank,
     stateRank: raw.state_rank,

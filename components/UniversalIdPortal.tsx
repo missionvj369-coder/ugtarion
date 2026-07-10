@@ -459,6 +459,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   const [totalRegistrations, setTotalRegistrations] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [view, setView] = useState<'register' | 'login' | 'id-card'>('register');
   
   // Registration Form States
   const [name, setName] = useState('');
@@ -579,6 +580,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
       });
       setCurrentUser(newUser);
       setActiveTab('dashboard');
+      setView('id-card');
       
       const count = await getRegistryCount();
       setTotalRegistrations(count);
@@ -619,6 +621,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     try {
       const user = await loginUser(loginIdentifier);
       setCurrentUser(user);
+      setView('id-card');
       setSuccess('Consciousness aligned. Welcome back, Guardian.');
       onAuthChange?.(user);
       setTimeout(() => {
