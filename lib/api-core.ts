@@ -52,10 +52,19 @@ export const loginSchema = z.object({
 
 // Create Supabase client with service role key (server-side only)
 // Falls back to anon key for local development if service role key not available
+// Supports multiple env var naming conventions for flexibility across platforms
 export function createSupabaseAdmin(): SupabaseClient {
   const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  
+  // Support multiple naming conventions for service role key
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY 
+    || process.env.SERVICE_ROLE_KEY 
+    || process.env.SUPABASE_SERVICE_KEY;
+  
+  // Support multiple naming conventions for anon key
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY 
+    || process.env.SUPABASE_ANON_KEY 
+    || process.env.ANON_KEY;
 
   if (!url) {
     throw new Error('Missing Supabase URL: VITE_SUPABASE_URL or SUPABASE_URL required');
@@ -65,7 +74,7 @@ export function createSupabaseAdmin(): SupabaseClient {
   const key = serviceKey || anonKey;
   
   if (!key) {
-    throw new Error('Missing Supabase key: SUPABASE_SERVICE_ROLE_KEY (production) or VITE_SUPABASE_ANON_KEY (local dev) required');
+    throw new Error('Missing Supabase key: SUPABASE_SERVICE_ROLE_KEY/SERVICE_ROLE_KEY (production) or VITE_SUPABASE_ANON_KEY/ANON_KEY (local dev) required');
   }
 
   return createClient(url, key, {
