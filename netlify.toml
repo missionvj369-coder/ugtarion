@@ -5,3 +5,8 @@
 [dev]
   command = "npm run start:api"
   functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
