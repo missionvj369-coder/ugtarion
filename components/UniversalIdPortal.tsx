@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Globe, 
@@ -18,7 +18,12 @@ import {
   X,
   LogIn,
   UserPlus,
-  Shield
+  Shield,
+  RotateCcw,
+  AlertCircle,
+  CheckCircle,
+  WifiOff,
+  Server
 } from 'lucide-react';
 import { 
   getRegistryCount, 
@@ -30,6 +35,85 @@ import {
 } from '../lib/apiClient';
 import type { UniversalIdRecord } from '../lib/apiClient';
 import SectionWrapper from './SectionWrapper';
+
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+interface ApiError extends Error {
+  code?: string;
+  status?: number;
+  isNetworkError?: boolean;
+  isAuthError?: boolean;
+  isServerError?: boolean;
+}
+
+function classifyError(error: any): ApiError {
+  const apiError: ApiError = new Error(error?.message || 'Unknown error');
+  apiError.message = error?.message || 'Unknown error';
+  apiError.code = error?.code;
+  apiError.status = error?.status;
+  
+  // Network errors
+  if (error instanceof TypeError && error.message.includes('fetch')) {
+    apiError.isNetworkError = true;
+    apiError.message = 'Network error: Unable to connect to the registry. Please check your internet connection.';
+  }
+  // Supabase auth errors
+  else if (error?.message?.includes('JWT') || error?.message?.includes('auth') || error?.status === 401) {
+    apiError.isAuthError = true;
+    apiError.message = 'Authentication failed. Please try logging in again.';
+  }
+  // Supabase RLS / permission errors
+  else if (error?.message?.includes('row-level security') || error?.message?.includes('permission') || error?.status === 403) {
+    apiError.isAuthError = true;
+    apiError.message = 'Access denied. Please check your credentials or contact support.';
+  }
+  // Server errors
+  else if (error?.status >= 500 || error?.message?.includes('500') || error?.message?.includes('server')) {
+    apiError.isServerError = true;
+    apiError.message = 'Registry server error. Please try again in a moment.';
+  }
+  // Duplicate entry
+  else if (error?.message?.includes('duplicate') || error?.message?.includes('already exists') || error?.code === '23505') {
+    apiError.message = 'This email or phone is already registered. Please use a different one or log in.';
+  }
+  // Network timeout
+  else if (error?.name === 'AbortError' || error?.message?.includes('timeout')) {
+    apiError.isNetworkError = true;
+    apiError.message = 'Request timed out. Please check your connection and try again.';
+  }
+  
+  return apiError;
+}
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries: number = MAX_RETRIES,
+  delay: number = RETRY_DELAY_MS
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    const apiError = classifyError(error);
+    
+    // Don't retry auth errors or client errors (4xx)
+    if (apiError.isAuthError || (apiError.status && apiError.status >= 400 && apiError.status < 500)) {
+      throw apiError;
+    }
+    
+    // Don't retry if no retries left
+    if (retries <= 0) {
+      throw apiError;
+    }
+    
+    // Wait before retry
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    // Retry with exponential backoff
+    return withRetry(fn, retries - 1, delay * 2);
+  }
+}
 
 interface UniversalIdPortalProps {
   /** If true, renders as a modal; if false, renders as an inline section */
@@ -76,10 +160,10 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     setIsLoading(true);
     setError('');
     try {
-      const count = await getRegistryCount();
+      const count = await withRetry(() => getRegistryCount());
       setTotalRegistrations(count);
       
-      const user = await getActiveUser();
+      const user = await withRetry(() => getActiveUser());
       if (user) {
         setCurrentUser(user);
         setActiveTab('dashboard');
@@ -89,7 +173,8 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
         onAuthChange?.(null);
       }
     } catch (err: any) {
-      setError('Failed to sync with the registry.');
+      const apiError = classifyError(err);
+      setError(apiError.message || 'Failed to sync with the registry. Please check your connection.');
       onAuthChange?.(null);
     } finally {
       setIsLoading(false);

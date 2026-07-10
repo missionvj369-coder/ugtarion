@@ -11,7 +11,7 @@ import {
   handleRegister,
   handleLogin,
   createSupabaseAdmin,
-} from '../lib/api-core.js';
+} from '../lib/api-core.ts';
 
 // Load server-only environment first, then fallback to local if missing.
 dotenv.config({ path: '.env.server' });

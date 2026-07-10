@@ -48,6 +48,13 @@ CREATE POLICY "Allow service role full access" ON public.profiles
 -- Create a sequence for generating sequential UGT IDs atomically
 CREATE SEQUENCE IF NOT EXISTS public.ugt_id_seq START 1;
 
+-- Drop existing functions if they exist (to handle return type changes)
+DROP FUNCTION IF EXISTS public.calculate_universal_standings(TEXT);
+DROP FUNCTION IF EXISTS public.get_next_ugt_id();
+DROP FUNCTION IF EXISTS public.register_user_atomic(TEXT, DATE, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS public.login_user_atomic(TEXT);
+DROP FUNCTION IF EXISTS public.get_total_registrations();
+
 -- Function to calculate universal standings (ranks) for a given user
 -- Returns global, nation, state, district, city, pincode ranks
 CREATE OR REPLACE FUNCTION public.calculate_universal_standings(target_uid TEXT)
