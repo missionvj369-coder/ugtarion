@@ -117,12 +117,6 @@ export const GlobalLeadershipIcon: React.FC<{ className?: string }> = ({ classNa
     <IconWrapper className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h8a2 2 0 002-2v-1a2 2 0 012-2h1.945M12 12a2 2 0 100-4 2 2 0 000 4z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6z" /></IconWrapper>
 );
 
-export const MailIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <IconWrapper className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-    </IconWrapper>
-);
-
 export const WhatsappIcon: React.FC<{ className?: string }> = ({ className }) => (
     <IconWrapper className={className}>
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
@@ -198,5 +192,72 @@ export const ClipboardIcon: React.FC<{ className?: string }> = ({ className }) =
 export const CheckIcon: React.FC<{ className?: string }> = ({ className }) => (
     <IconWrapper className={className} strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75L10.5 18.75L19.5 5.25" />
+    </IconWrapper>
+);
+
+export const CheckCircleIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M22 4L12 14.01l-3-3" />
+    </IconWrapper>
+);
+
+export const AlertCircleIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01" />
+    </IconWrapper>
+);
+
+export const Loader2Icon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-6.219-8.56" />
+    </IconWrapper>
+);
+
+export const UserIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9a4 4 0 100-8 4 4 0 000 8z" />
+    </IconWrapper>
+);
+
+export const MailIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </IconWrapper>
+);
+
+export const PhoneIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+    </IconWrapper>
+);
+
+export const AwardIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M22 6l-5 10.5L12 21l-5-4.5L2 6l10-3 5 1.5 5-1.5 10 3z" />
+    </IconWrapper>
+);
+
+export const ArrowLeftIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+    </IconWrapper>
+);
+
+export const LogInIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 17l5-5-5-5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H3" />
+    </IconWrapper>
+);
+
+export const ExternalLinkIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <IconWrapper className={className} strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 3h6v6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 14L21 3" />
     </IconWrapper>
 );

@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Globe, 
-  User, 
-  Calendar, 
-  Mail, 
-  Phone, 
-  ShieldCheck, 
-  Sparkles, 
-  LogOut, 
-  QrCode, 
-  Share2, 
-  Download, 
-  ChevronRight, 
+import {
+  Globe,
+  User,
+  Calendar,
+  Mail,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+  LogOut,
+  QrCode,
+  Share2,
+  Download,
+  ChevronRight,
   Milestone,
   Loader2,
   X,
@@ -51,16 +51,17 @@ import {
   Minimize2,
   Flag
 } from 'lucide-react';
-import { 
-  getRegistryCount, 
-  registerUser, 
-  getActiveUser, 
-  setActiveUserId, 
+import {
+  getRegistryCount,
+  registerUser,
+  getActiveUser,
+  setActiveUserId,
   loginUser,
   getProfileById
 } from '../lib/apiClient';
 import type { UniversalIdRecord } from '../lib/apiClient';
 import SectionWrapper from './SectionWrapper';
+import { createUGTAuthClient, UGTAuthClient } from '../lib/ugt-auth-client';
 
 // Retry configuration
 const MAX_RETRIES = 3;
@@ -135,6 +136,7 @@ interface UniversalIdPortalProps {
   isOpen?: boolean;
   onClose?: () => void;
   onAuthChange?: (user: UniversalIdRecord | null) => void;
+  authClient?: UGTAuthClient | null;
 }
 
   // Professional ID Card Component - Memoized for performance
@@ -453,6 +455,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   isOpen = true,
   onClose,
   onAuthChange,
+  authClient: authClientProp,
 }) => {
   const [activeTab, setActiveTab] = useState<'register' | 'login' | 'dashboard'>('register');
   const [currentUser, setCurrentUser] = useState<UniversalIdRecord | null>(null);
@@ -481,6 +484,22 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   const [copied, setCopied] = useState(false);
   const [showRankDetails, setShowRankDetails] = useState(true);
   const [showFullCard, setShowFullCard] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [qrCodeToken, setQrCodeToken] = useState<string>('');
+  const [qrCodeExpiresAt, setQrCodeExpiresAt] = useState<Date | null>(null);
+  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  
+  // Initialize UGT Auth Client - use prop if provided, otherwise create new
+  const authClient = useMemo(() => {
+    if (authClientProp) return authClientProp;
+    return createUGTAuthClient({
+      authDomain: import.meta.env.VITE_AUTH_DOMAIN || 'auth.ugt.org',
+      clientId: import.meta.env.VITE_PLATFORM_CLIENT_ID || 'ugt_portal_client',
+      redirectUri: import.meta.env.VITE_PLATFORM_REDIRECT_URI || `${window.location.origin}/auth/callback`,
+      scope: 'profile email rankings',
+      usePKCE: true,
+    });
+  }, [authClientProp]);
   
   // Refs for focus management
   const firstInputRef = useRef<HTMLInputElement>(null);
@@ -560,8 +579,25 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     setSuccess('');
     setIsLoading(true);
 
+    // Validate all required fields
     if (!name || !dob || !email || !phone || !pincode || !city || !district || !state || !nation) {
       setError('Every field is sacred. Please complete all elements to establish your registry.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate phone format (basic international format)
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))) {
+      setError('Please enter a valid phone number in international format (e.g., +1234567890).');
       setIsLoading(false);
       return;
     }
@@ -600,7 +636,13 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
         setNation('');
       }, 1500);
     } catch (err: any) {
-      setError(err.message || 'An error occurred during verification.');
+      const apiError = classifyError(err);
+      // Handle duplicate phone/email errors specifically
+      if (apiError.message.includes('already registered') || apiError.message.includes('already exists') || apiError.code === '23505') {
+        setError('This email or phone number is already registered. Please use a different one or log in.');
+      } else {
+        setError(apiError.message || 'An error occurred during verification. Please check your connection and try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -651,6 +693,31 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
 
   const printCard = () => {
     window.print();
+  };
+
+  // Generate QR Code for cross-platform login using UGT Auth Client
+  const generateQRCode = async () => {
+    if (!currentUser) return;
+    
+    setIsGeneratingQR(true);
+    setError('');
+    try {
+      const result = await authClient.generateQRCode(currentUser.id, {
+        platformId: import.meta.env.VITE_PLATFORM_ID || 'ugt_portal',
+        redirectUri: import.meta.env.VITE_PLATFORM_REDIRECT_URI || `${window.location.origin}/auth/callback`,
+        scope: 'profile email rankings',
+        expiresInSeconds: 300, // 5 minutes
+      });
+      
+      setQrCodeUrl(result.qrUrl);
+      setQrCodeToken(result.token);
+      setQrCodeExpiresAt(result.expiresAt);
+      setSuccess('QR Code generated! Scan with another UGT platform to login securely via OAuth.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate QR code. Please try again.');
+    } finally {
+      setIsGeneratingQR(false);
+    }
   };
 
   const renderContent = () => (

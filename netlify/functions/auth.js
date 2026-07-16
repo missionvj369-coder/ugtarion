@@ -1,29 +1,26 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import { createClient } from '@supabase/supabase-js';
-import { SignJWT, jwtVerify, importPKCS8, importSPKI, generateKeyPair, exportPKCS8, exportSPKI } from 'jose';
-import { randomBytes, createHash } from 'crypto';
+/**
+ * Universal Guard Trust - Netlify Functions Auth Endpoints
+ * OAuth/OIDC Authorization Server for Cross-Platform UGT Login
+ * 
+ * Endpoints:
+ * - GET  /.netlify/functions/auth/authorize       - OAuth Authorization Endpoint
+ * - POST /.netlify/functions/auth/token           - Token Endpoint
+ * - GET  /.netlify/functions/auth/userinfo        - UserInfo Endpoint
+ * - POST /.netlify/functions/auth/register-platform - Platform Registration
+ * - GET  /.netlify/functions/auth/verify/:token   - QR Verification with Token Issuance
+ * - POST /.netlify/functions/auth/refresh         - Token Refresh
+ * - POST /.netlify/functions/auth/revoke          - Token Revocation
+ * - GET  /.netlify/functions/auth/jwks            - JWKS Endpoint
+ */
 
-// Import shared API core
-import {
-  handleGetCount,
-  handleGetProfile,
-  handleRegister,
-  handleLogin,
-  createSupabaseAdmin,
-} from '../lib/api-core.ts';
+const { createClient } = require('@supabase/supabase-js');
+const { SignJWT, jwtVerify, importPKCS8, importSPKI, generateKeyPair, exportPKCS8, exportSPKI } = require('jose');
+const { randomBytes, createHash } = require('crypto');
 
-// Load server-only environment first, then fallback to local if missing.
-dotenv.config({ path: '.env.server' });
-dotenv.config({ path: '.env.local' });
+// ============================================
+// Configuration & Supabase Client
+// ============================================
 
-const PORT = process.env.API_PORT ? Number(process.env.API_PORT) : 4000;
-const ALLOWED_ORIGIN = process.env.DEV_ORIGIN || 'http://localhost:4174';
-
-// Auth Configuration
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 const AUTH_DOMAIN = process.env.AUTH_DOMAIN || 'auth.ugt.org';
@@ -31,22 +28,13 @@ const PLATFORM_CLIENT_ID = process.env.PLATFORM_CLIENT_ID || 'ugt_portal_client'
 const PLATFORM_CLIENT_SECRET = process.env.PLATFORM_CLIENT_SECRET || 'ugt_portal_secret_change_in_production';
 const PLATFORM_REDIRECT_URI = process.env.PLATFORM_REDIRECT_URI || 'https://universal-guard-trust.netlify.app/auth/callback';
 
-// Create Supabase admin client
-const supabase = createSupabaseAdmin();
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  console.error('Missing Supabase configuration');
+}
 
-const app = express();
-app.use(helmet());
-app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }));
-app.use(express.json({ limit: '10kb' }));
-
-// Basic rate limiting for public endpoints
-const limiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 60, // limit each IP to 60 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+  auth: { persistSession: false },
 });
-app.use(limiter);
 
 // ============================================
 // Crypto Utilities
@@ -323,7 +311,7 @@ async function buildUserInfo(universalId, platformId, scope) {
 }
 
 // ============================================
-// CORS Headers Helper
+// CORS Headers
 // ============================================
 
 function corsHeaders(origin) {
@@ -345,27 +333,39 @@ function corsHeaders(origin) {
 }
 
 // ============================================
-// Auth Endpoints
+// Request Handlers
 // ============================================
 
-// OAuth Authorization Endpoint
-app.get('/auth/authorize', async (req, res) => {
-  const { client_id, redirect_uri, scope, response_type, state, code_challenge, code_challenge_method, prompt, qr_token } = req.query;
+async function handleAuthorize(event) {
+  const params = event.queryStringParameters || {};
+  const { client_id, redirect_uri, scope, response_type, state, code_challenge, code_challenge_method, prompt } = params;
 
   // Validate required parameters
   if (!client_id || !redirect_uri || response_type !== 'code') {
-    return res.status(400).json({ error: 'invalid_request', error_description: 'Missing required parameters' });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Missing required parameters' }),
+    };
   }
 
   // Validate platform
   const platform = await getPlatformByClientId(client_id);
   if (!platform) {
-    return res.status(400).json({ error: 'unauthorized_client', error_description: 'Invalid client_id' });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'unauthorized_client', error_description: 'Invalid client_id' }),
+    };
   }
 
   // Validate redirect_uri
   if (!platform.redirect_uris.includes(redirect_uri)) {
-    return res.status(400).json({ error: 'invalid_request', error_description: 'Invalid redirect_uri' });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Invalid redirect_uri' }),
+    };
   }
 
   // Validate scope
@@ -373,12 +373,18 @@ app.get('/auth/authorize', async (req, res) => {
   const allowedScopes = platform.scopes || ['profile', 'email', 'rankings'];
   const invalidScopes = requestedScopes.filter(s => !allowedScopes.includes(s));
   if (invalidScopes.length > 0) {
-    return res.status(400).json({ error: 'invalid_scope', error_description: `Invalid scopes: ${invalidScopes.join(', ')}` });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_scope', error_description: `Invalid scopes: ${invalidScopes.join(', ')}` }),
+    };
   }
 
   // For trusted platforms, auto-approve (skip consent)
+  // For others, show consent page (simplified - in production, render HTML page)
   if (!platform.is_trusted && prompt !== 'none') {
     // In production, render consent page HTML
+    // For now, we'll auto-approve for demo
     console.log('Consent required for platform:', platform.slug);
   }
 
@@ -389,12 +395,13 @@ app.get('/auth/authorize', async (req, res) => {
 
   // Get user from session (simplified - in production, check auth cookie/session)
   // For QR flow, we'll get user from QR token
+  const qrToken = params.qr_token;
   let userId = null;
   let universalId = null;
 
-  if (qr_token) {
+  if (qrToken) {
     try {
-      const qrData = await consumeQRVerificationToken(qr_token);
+      const qrData = await consumeQRVerificationToken(qrToken);
       universalId = qrData.universal_id;
       
       // Get user ID from universal_id
@@ -405,7 +412,11 @@ app.get('/auth/authorize', async (req, res) => {
         userId = profile[0].id;
       }
     } catch (e) {
-      return res.status(400).json({ error: 'invalid_grant', error_description: 'Invalid QR token' });
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid QR token' }),
+      };
     }
   }
 
@@ -419,7 +430,14 @@ app.get('/auth/authorize', async (req, res) => {
     if (code_challenge) loginUrl.searchParams.set('code_challenge', code_challenge);
     if (code_challenge_method) loginUrl.searchParams.set('code_challenge_method', code_challenge_method);
     
-    return res.redirect(loginUrl.toString());
+    return {
+      statusCode: 302,
+      headers: {
+        ...corsHeaders(event.headers.origin),
+        Location: loginUrl.toString(),
+      },
+      body: '',
+    };
   }
 
   // Store authorization code
@@ -439,19 +457,26 @@ app.get('/auth/authorize', async (req, res) => {
   redirectUrl.searchParams.set('code', code);
   if (state) redirectUrl.searchParams.set('state', state);
 
-  res.redirect(redirectUrl.toString());
-});
+  return {
+    statusCode: 302,
+    headers: {
+      ...corsHeaders(event.headers.origin),
+      Location: redirectUrl.toString(),
+    },
+    body: '',
+  };
+}
 
-// Token Endpoint
-app.post('/auth/token', async (req, res) => {
-  const { grant_type, code, redirect_uri, client_id, client_secret, refresh_token, scope } = req.body;
+async function handleToken(event) {
+  const body = JSON.parse(event.body || '{}');
+  const { grant_type, code, redirect_uri, client_id, client_secret, refresh_token, scope } = body;
 
   // Client authentication
   let platform;
   if (client_id && client_secret) {
     platform = await verifyPlatformSecret(client_id, client_secret);
-  } else if (req.headers.authorization) {
-    const auth = req.headers.authorization;
+  } else if (event.headers.authorization) {
+    const auth = event.headers.authorization;
     if (auth.startsWith('Basic ')) {
       const credentials = Buffer.from(auth.slice(6), 'base64').toString().split(':');
       platform = await verifyPlatformSecret(credentials[0], credentials[1]);
@@ -459,13 +484,21 @@ app.post('/auth/token', async (req, res) => {
   }
 
   if (!platform) {
-    return res.status(401).json({ error: 'invalid_client', error_description: 'Invalid client credentials' });
+    return {
+      statusCode: 401,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_client', error_description: 'Invalid client credentials' }),
+    };
   }
 
   if (grant_type === 'authorization_code') {
     // Exchange authorization code for tokens
     if (!code || !redirect_uri) {
-      return res.status(400).json({ error: 'invalid_request', error_description: 'Missing code or redirect_uri' });
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'invalid_request', error_description: 'Missing code or redirect_uri' }),
+      };
     }
 
     const codeHash = hashToken(code);
@@ -479,21 +512,37 @@ app.post('/auth/token', async (req, res) => {
       .single();
 
     if (codeError || !authCode) {
-      return res.status(400).json({ error: 'invalid_grant', error_description: 'Invalid or expired authorization code' });
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid or expired authorization code' }),
+      };
     }
 
     if (authCode.redirect_uri !== redirect_uri) {
-      return res.status(400).json({ error: 'invalid_grant', error_description: 'Redirect URI mismatch' });
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'invalid_grant', error_description: 'Redirect URI mismatch' }),
+      };
     }
 
     // Verify PKCE if used
     if (authCode.code_challenge && authCode.code_challenge_method === 'S256') {
-      if (!req.body.code_verifier) {
-        return res.status(400).json({ error: 'invalid_grant', error_description: 'PKCE code_verifier required' });
+      if (!body.code_verifier) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders(event.headers.origin),
+          body: JSON.stringify({ error: 'invalid_grant', error_description: 'PKCE code_verifier required' }),
+        };
       }
-      const challenge = createHash('sha256').update(req.body.code_verifier).digest('base64url');
+      const challenge = createHash('sha256').update(body.code_verifier).digest('base64url');
       if (challenge !== authCode.code_challenge) {
-        return res.status(400).json({ error: 'invalid_grant', error_description: 'Invalid PKCE code_verifier' });
+        return {
+          statusCode: 400,
+          headers: corsHeaders(event.headers.origin),
+          body: JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid PKCE code_verifier' }),
+        };
       }
     }
 
@@ -506,67 +555,106 @@ app.post('/auth/token', async (req, res) => {
     // Create auth session
     const tokens = await createAuthSession(authCode.user_id, platform.id, {
       scope: authCode.scope,
-      userAgent: req.headers['user-agent'],
-      ipAddress: req.headers['x-forwarded-for'] || req.headers['x-real-ip'],
+      userAgent: event.headers['user-agent'],
+      ipAddress: event.headers['x-forwarded-for'] || event.headers['x-real-ip'],
     });
 
-    return res.json(tokens);
+    return {
+      statusCode: 200,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify(tokens),
+    };
   }
 
   if (grant_type === 'refresh_token') {
     // Refresh access token
     if (!refresh_token) {
-      return res.status(400).json({ error: 'invalid_request', error_description: 'Missing refresh_token' });
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'invalid_request', error_description: 'Missing refresh_token' }),
+      };
     }
 
     try {
       const tokens = await refreshAuthSession(refresh_token, platform.id);
-      return res.json({
-        access_token: tokens.access_token,
-        expires_in: tokens.expires_in,
-        token_type: 'Bearer',
-        scope: tokens.scope.join(' '),
-      });
+      return {
+        statusCode: 200,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({
+          access_token: tokens.access_token,
+          expires_in: tokens.expires_in,
+          token_type: 'Bearer',
+          scope: tokens.scope.join(' '),
+        }),
+      };
     } catch (e) {
-      return res.status(400).json({ error: 'invalid_grant', error_description: e.message });
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'invalid_grant', error_description: e.message }),
+      };
     }
   }
 
-  res.status(400).json({ error: 'unsupported_grant_type', error_description: 'Grant type not supported' });
-});
+  return {
+    statusCode: 400,
+    headers: corsHeaders(event.headers.origin),
+    body: JSON.stringify({ error: 'unsupported_grant_type', error_description: 'Grant type not supported' }),
+  };
+}
 
-// UserInfo Endpoint
-app.get('/auth/userinfo', async (req, res) => {
-  const authHeader = req.headers.authorization;
+async function handleUserInfo(event) {
+  const authHeader = event.headers.authorization || event.headers.Authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'invalid_token', error_description: 'Missing or invalid Authorization header' });
+    return {
+      statusCode: 401,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_token', error_description: 'Missing or invalid Authorization header' }),
+    };
   }
 
   const accessToken = authHeader.slice(7);
   const validation = await validateAccessToken(accessToken);
 
   if (!validation) {
-    return res.status(401).json({ error: 'invalid_token', error_description: 'Token expired or revoked' });
+    return {
+      statusCode: 401,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_token', error_description: 'Token expired or revoked' }),
+    };
   }
 
   // Verify token signature
   const payload = await verifyAccessToken(accessToken);
   if (!payload) {
-    return res.status(401).json({ error: 'invalid_token', error_description: 'Token signature verification failed' });
+    return {
+      statusCode: 401,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_token', error_description: 'Token signature verification failed' }),
+    };
   }
 
   // Build user info
   const userInfo = await buildUserInfo(payload.uid, validation.platform_id, validation.scope);
-  res.json(userInfo);
-});
+  return {
+    statusCode: 200,
+    headers: corsHeaders(event.headers.origin),
+    body: JSON.stringify(userInfo),
+  };
+}
 
-// Platform Registration
-app.post('/auth/register-platform', async (req, res) => {
-  const { name, slug, display_name, description, logo_url, website_url, redirect_uris, allowed_origins, scopes } = req.body;
+async function handleRegisterPlatform(event) {
+  const body = JSON.parse(event.body || '{}');
+  const { name, slug, display_name, description, logo_url, website_url, redirect_uris, allowed_origins, scopes } = body;
 
   // Validate required fields
   if (!name || !slug || !display_name || !website_url || !redirect_uris || !Array.isArray(redirect_uris) || redirect_uris.length === 0) {
-    return res.status(400).json({ error: 'invalid_request', error_description: 'Missing required fields' });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Missing required fields' }),
+    };
   }
 
   // Generate client credentials
@@ -596,27 +684,38 @@ app.post('/auth/register-platform', async (req, res) => {
 
   if (error) {
     if (error.code === '23505') { // Unique violation
-      return res.status(409).json({ error: 'conflict', error_description: 'Platform slug already exists' });
+      return {
+        statusCode: 409,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'conflict', error_description: 'Platform slug already exists' }),
+      };
     }
-    return res.status(500).json({ error: 'server_error', error_description: error.message });
+    return {
+      statusCode: 500,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'server_error', error_description: error.message }),
+    };
   }
 
-  res.status(201).json({
-    platform: {
-      id: data.id,
-      name: data.name,
-      slug: data.slug,
-      display_name: data.display_name,
-      client_id: data.client_id,
-    },
-    client_secret: clientSecret, // Only returned once!
-  });
-});
+  return {
+    statusCode: 201,
+    headers: corsHeaders(event.headers.origin),
+    body: JSON.stringify({
+      platform: {
+        id: data.id,
+        name: data.name,
+        slug: data.slug,
+        display_name: data.display_name,
+        client_id: data.client_id,
+      },
+      client_secret: clientSecret, // Only returned once!
+    }),
+  };
+}
 
-// QR Verification with Token Issuance
-app.get('/auth/verify/:token', async (req, res) => {
-  const { token } = req.params;
-  const redirectUri = req.query.redirect_uri;
+async function handleQRVerify(event) {
+  const token = event.path.split('/').pop(); // Extract token from /verify/:token
+  const redirectUri = event.queryStringParameters?.redirect_uri;
 
   try {
     const qrData = await consumeQRVerificationToken(token);
@@ -628,7 +727,11 @@ app.get('/auth/verify/:token', async (req, res) => {
     });
 
     if (!profile || profile.length === 0) {
-      return res.status(404).json({ error: 'not_found', error_description: 'User not found' });
+      return {
+        statusCode: 404,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'not_found', error_description: 'User not found' }),
+      };
     }
 
     const user = profile[0];
@@ -638,11 +741,11 @@ app.get('/auth/verify/:token', async (req, res) => {
     // Create auth session for the target platform
     const tokens = await createAuthSession(user.id, targetPlatformId, {
       scope,
-      userAgent: req.headers['user-agent'],
-      ipAddress: req.headers['x-forwarded-for'] || req.headers['x-real-ip'],
+      userAgent: event.headers['user-agent'],
+      ipAddress: event.headers['x-forwarded-for'] || event.headers['x-real-ip'],
     });
 
-    // Build redirect URL with tokens
+    // Build redirect URL with tokens (for implicit flow) or redirect to platform callback
     const redirectUrl = new URL(finalRedirectUri);
     redirectUrl.searchParams.set('access_token', tokens.access_token);
     redirectUrl.searchParams.set('refresh_token', tokens.refresh_token);
@@ -651,18 +754,33 @@ app.get('/auth/verify/:token', async (req, res) => {
     redirectUrl.searchParams.set('scope', tokens.scope);
     redirectUrl.searchParams.set('universal_id', universal_id);
 
-    res.redirect(redirectUrl.toString());
+    return {
+      statusCode: 302,
+      headers: {
+        ...corsHeaders(event.headers.origin),
+        Location: redirectUrl.toString(),
+      },
+      body: '',
+    };
   } catch (e) {
-    res.status(400).json({ error: 'invalid_token', error_description: e.message });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_token', error_description: e.message }),
+    };
   }
-});
+}
 
-// Token Refresh
-app.post('/auth/refresh', async (req, res) => {
-  const { refresh_token, client_id, client_secret } = req.body;
+async function handleRefresh(event) {
+  const body = JSON.parse(event.body || '{}');
+  const { refresh_token, client_id, client_secret } = body;
 
   if (!refresh_token) {
-    return res.status(400).json({ error: 'invalid_request', error_description: 'Missing refresh_token' });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Missing refresh_token' }),
+    };
   }
 
   // Authenticate client
@@ -672,25 +790,37 @@ app.post('/auth/refresh', async (req, res) => {
   }
 
   if (!platform) {
-    return res.status(401).json({ error: 'invalid_client', error_description: 'Invalid client credentials' });
+    return {
+      statusCode: 401,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_client', error_description: 'Invalid client credentials' }),
+    };
   }
 
   try {
     const tokens = await refreshAuthSession(refresh_token, platform.id);
-    res.json({
-      access_token: tokens.access_token,
-      expires_in: tokens.expires_in,
-      token_type: 'Bearer',
-      scope: tokens.scope.join(' '),
-    });
+    return {
+      statusCode: 200,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({
+        access_token: tokens.access_token,
+        expires_in: tokens.expires_in,
+        token_type: 'Bearer',
+        scope: tokens.scope.join(' '),
+      }),
+    };
   } catch (e) {
-    res.status(400).json({ error: 'invalid_grant', error_description: e.message });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_grant', error_description: e.message }),
+    };
   }
-});
+}
 
-// Token Revocation
-app.post('/auth/revoke', async (req, res) => {
-  const { token, token_type_hint, client_id, client_secret } = req.body;
+async function handleRevoke(event) {
+  const body = JSON.parse(event.body || '{}');
+  const { token, token_type_hint, client_id, client_secret } = body;
 
   // Authenticate client
   let platform;
@@ -699,16 +829,23 @@ app.post('/auth/revoke', async (req, res) => {
   }
 
   if (!platform) {
-    return res.status(401).json({ error: 'invalid_client', error_description: 'Invalid client credentials' });
+    return {
+      statusCode: 401,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_client', error_description: 'Invalid client credentials' }),
+    };
   }
 
   // In a full implementation, revoke the specific token
   // For now, return success (RFC 7009 says to always return 200)
-  res.json({});
-});
+  return {
+    statusCode: 200,
+    headers: corsHeaders(event.headers.origin),
+    body: JSON.stringify({}),
+  };
+}
 
-// JWKS Endpoint
-app.get('/auth/jwks', async (req, res) => {
+async function handleJWKS(event) {
   // Get all active public keys
   const { data: keys } = await supabase
     .from('jwt_keys')
@@ -735,70 +872,71 @@ app.get('/auth/jwks', async (req, res) => {
     }
   }
 
-  res.set('Cache-Control', 'public, max-age=3600');
-  res.json(jwks);
-});
+  return {
+    statusCode: 200,
+    headers: {
+      ...corsHeaders(event.headers.origin),
+      'Cache-Control': 'public, max-age=3600',
+    },
+    body: JSON.stringify(jwks),
+  };
+}
 
 // ============================================
-// Original API Routes
+// Main Handler
 // ============================================
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+exports.handler = async function(event, context) {
+  const path = event.path.replace('/.netlify/functions/auth', '');
+  const method = event.httpMethod;
 
-// GET /api/count
-app.get('/api/count', async (req, res) => {
-  const result = await handleGetCount(supabase);
-  if (result.error) return res.status(500).json({ error: result.error });
-  return res.json(result.data);
-});
-
-// GET /api/profile/:uid
-app.get('/api/profile/:uid', async (req, res) => {
-  const { uid } = req.params;
-  const result = await handleGetProfile(supabase, uid);
-  if (result.error) {
-    const status = result.error === 'Profile not found.' ? 404 : 500;
-    return res.status(status).json({ error: result.error });
+  // Handle CORS preflight
+  if (method === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: corsHeaders(event.headers.origin),
+      body: '',
+    };
   }
-  return res.json(result.data);
-});
 
-// POST /api/register
-app.post('/api/register', async (req, res) => {
-  const result = await handleRegister(supabase, req.body);
-  if (result.error) {
-    const status = result.error.includes('already associated') || result.error.includes('phone number is already registered') ? 409 : 500;
-    return res.status(status).json({ error: result.error, details: result.details });
+  try {
+    // Route to appropriate handler
+    if (path === '/authorize' && method === 'GET') {
+      return await handleAuthorize(event);
+    }
+    if (path === '/token' && method === 'POST') {
+      return await handleToken(event);
+    }
+    if (path === '/userinfo' && method === 'GET') {
+      return await handleUserInfo(event);
+    }
+    if (path === '/register-platform' && method === 'POST') {
+      return await handleRegisterPlatform(event);
+    }
+    if (path.startsWith('/verify/') && method === 'GET') {
+      return await handleQRVerify(event);
+    }
+    if (path === '/refresh' && method === 'POST') {
+      return await handleRefresh(event);
+    }
+    if (path === '/revoke' && method === 'POST') {
+      return await handleRevoke(event);
+    }
+    if (path === '/jwks' && method === 'GET') {
+      return await handleJWKS(event);
+    }
+
+    return {
+      statusCode: 404,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'not_found', error_description: 'Endpoint not found' }),
+    };
+  } catch (error) {
+    console.error('Auth function error:', error);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'server_error', error_description: 'Internal server error' }),
+    };
   }
-  return res.json(result.data);
-});
-
-// POST /api/login
-app.post('/api/login', async (req, res) => {
-  const result = await handleLogin(supabase, req.body);
-  if (result.error) {
-    const status = result.error.includes('not found') ? 404 : 500;
-    return res.status(status).json({ error: result.error, details: result.details });
-  }
-  return res.json(result.data);
-});
-
-// SECURITY: Removed insecure /api/verify/:uid endpoint
-// Verification now requires OAuth flow via /auth/callback
-// This prevents random UGT number access
-
-app.listen(PORT, () => {
-  console.log(`Supabase API server running on http://localhost:${PORT}`);
-  console.log(`Auth endpoints:`);
-  console.log(`  GET  /auth/authorize`);
-  console.log(`  POST /auth/token`);
-  console.log(`  GET  /auth/userinfo`);
-  console.log(`  POST /auth/register-platform`);
-  console.log(`  GET  /auth/verify/:token`);
-  console.log(`  POST /auth/refresh`);
-  console.log(`  POST /auth/revoke`);
-  console.log(`  GET  /auth/jwks`);
-});
+};

@@ -64,12 +64,16 @@ export async function handler(event) {
       return jsonResponse(result.error ? (isDuplicate ? 409 : 500) : 200, result.error ? { error: result.error, details: result.details } : result.data);
     }
 
-    // POST /login
+// POST /login
     if (event.httpMethod === 'POST' && parts[0] === 'login') {
       const body = event.body ? JSON.parse(event.body) : {};
       const result = await handleLogin(supabase, body);
       return jsonResponse(result.error ? (result.error.includes('not found') ? 404 : 500) : 200, result.error ? { error: result.error, details: result.details } : result.data);
     }
+
+    // SECURITY: Removed insecure /verify/:uid endpoint
+    // Verification now requires OAuth flow via /auth/callback
+    // This prevents random UGT number access
 
     return jsonResponse(404, { error: 'Not found' });
   } catch (err) {
