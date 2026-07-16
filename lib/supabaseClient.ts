@@ -303,3 +303,248 @@ export const signOutSupabase = async (): Promise<void> => {
   }
   setActiveSupabaseUserId(null);
 };
+
+/**
+ * Log authentication event for audit trail
+ */
+export const logAuthEvent = async (
+  eventType: string,
+  options: {
+    userId?: string;
+    platformId?: string;
+    identifier?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    success: boolean;
+    errorMessage?: string;
+    metadata?: Record<string, any>;
+  }
+): Promise<void> => {
+  try {
+    await supabase.rpc('log_auth_event', {
+      p_event_type: eventType,
+      p_user_id: options.userId || null,
+      p_platform_id: options.platformId || null,
+      p_identifier: options.identifier || null,
+      p_ip_address: options.ipAddress || null,
+      p_user_agent: options.userAgent || null,
+      p_success: options.success,
+      p_error_message: options.errorMessage || null,
+      p_metadata: options.metadata || {},
+    });
+  } catch (error) {
+    // Don't throw - audit logging should not break auth flow
+    console.error('Failed to log auth event:', error);
+  }
+};
+
+/**
+ * Check rate limit for authentication operations
+ */
+export const checkRateLimit = async (
+  key: string,
+  windowSeconds: number,
+  maxRequests: number
+): Promise<{ allowed: boolean; currentCount: number; resetAt: Date }> => {
+  const { data, error } = await supabase.rpc('check_rate_limit', {
+    p_key: key,
+    p_window_seconds: windowSeconds,
+    p_max_requests: maxRequests,
+  });
+
+  if (error) {
+    // Fail open - allow request if rate limit check fails
+    console.warn('Rate limit check failed, allowing request:', error);
+    return {
+      allowed: true,
+      currentCount: 0,
+      resetAt: new Date(Date.now() + windowSeconds * 1000),
+    };
+  }
+
+  return {
+    allowed: data[0].allowed,
+    currentCount: data[0].current_count,
+    resetAt: new Date(data[0].reset_at),
+  };
+};
+
+/**
+ * Register a new user with password
+ */
+export const registerUserWithPassword = async (data: {
+  name: string;
+  dob: string;
+  email: string;
+  phone: string;
+  pincode: string;
+  city: string;
+  district: string;
+  state: string;
+  nation: string;
+  password: string;
+}): Promise<UniversalIdRecord> => {
+  const { data: result, error } = await supabase.rpc('register_user_with_password', {
+    p_name: data.name.trim(),
+    p_dob: data.dob,
+    p_email: data.email.trim().toLowerCase(),
+    p_phone: data.phone.trim(),
+    p_pincode: data.pincode.trim(),
+    p_city: data.city.trim(),
+    p_district: data.district.trim(),
+    p_state: data.state.trim(),
+    p_nation: data.nation.trim(),
+    p_password: data.password,
+  });
+
+  if (error) {
+    if (error.message?.includes('already associated') || error.message?.includes('already registered')) {
+      throw new Error('This email or phone is already registered. Please use a different one or log in.');
+    }
+    throw new Error(error.message || 'Registration failed');
+  }
+
+  if (!result || result.length === 0) {
+    throw new Error('Registration failed - no data returned');
+  }
+
+  const profile = result[0];
+  setActiveSupabaseUserId(profile.universal_id);
+  return buildRecord(profile, profile);
+};
+
+/**
+ * Log in with password (email, phone, or universal_id + password)
+ */
+export const loginWithPassword = async (identifier: string, password: string): Promise<UniversalIdRecord> => {
+  const cleanInput = identifier.trim().toLowerCase();
+
+  const { data: result, error } = await supabase.rpc('login_with_password', {
+    p_identifier: cleanInput,
+    p_password: password,
+  });
+
+  if (error) {
+    if (error.message?.includes('Invalid credentials') || error.message?.includes('not found')) {
+      throw new Error('Invalid credentials. Please check your email/phone/UID and password.');
+    }
+    if (error.message?.includes('passwordless')) {
+      throw new Error('This account uses passwordless login. Please use email/mobile login.');
+    }
+    throw new Error(error.message || 'Login failed');
+  }
+
+  if (!result || result.length === 0) {
+    throw new Error('Invalid credentials. Please check your email/phone/UID and password.');
+  }
+
+  const profile = result[0];
+  setActiveSupabaseUserId(profile.universal_id);
+  return buildRecord(profile, profile);
+};
+
+/**
+ * Request password reset (sends reset token via email/SMS)
+ */
+export const requestPasswordReset = async (identifier: string): Promise<{ success: boolean; message: string; expiresAt: Date | null }> => {
+  const cleanInput = identifier.trim().toLowerCase();
+
+  const { data: result, error } = await supabase.rpc('request_password_reset', {
+    p_identifier: cleanInput,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to request password reset');
+  }
+
+  if (!result || result.length === 0) {
+    // Don't reveal if user exists - return success anyway
+    return { success: true, message: 'If an account exists, a reset link has been sent.', expiresAt: null };
+  }
+
+  const res = result[0];
+  return {
+    success: res.success,
+    message: res.message,
+    expiresAt: res.expires_at ? new Date(res.expires_at) : null,
+  };
+};
+
+/**
+ * Verify password reset token
+ */
+export const verifyPasswordResetToken = async (token: string): Promise<{ valid: boolean; userId: string | null; identifier: string | null; expiresAt: Date | null }> => {
+  const { data: result, error } = await supabase.rpc('verify_password_reset_token', {
+    p_token: token,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to verify reset token');
+  }
+
+  if (!result || result.length === 0) {
+    return { valid: false, userId: null, identifier: null, expiresAt: null };
+  }
+
+  const res = result[0];
+  return {
+    valid: res.valid,
+    userId: res.user_id,
+    identifier: res.identifier,
+    expiresAt: res.expires_at ? new Date(res.expires_at) : null,
+  };
+};
+
+/**
+ * Reset password with token
+ */
+export const resetPassword = async (token: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+  const { data: result, error } = await supabase.rpc('reset_password', {
+    p_token: token,
+    p_new_password: newPassword,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to reset password');
+  }
+
+  if (!result || result.length === 0) {
+    throw new Error('Failed to reset password');
+  }
+
+  const res = result[0];
+  return {
+    success: res.success,
+    message: res.message,
+  };
+};
+
+/**
+ * Update password for authenticated user
+ */
+export const updatePassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+  const activeId = localStorage.getItem(ACTIVE_USER_ID_KEY);
+  if (!activeId) {
+    throw new Error('Not authenticated');
+  }
+
+  const { data: result, error } = await supabase.rpc('update_password', {
+    p_user_id: activeId,
+    p_current_password: currentPassword,
+    p_new_password: newPassword,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to update password');
+  }
+
+  if (!result || result.length === 0) {
+    throw new Error('Failed to update password');
+  }
+
+  const res = result[0];
+  return {
+    success: res.success,
+    message: res.message,
+  };
+};

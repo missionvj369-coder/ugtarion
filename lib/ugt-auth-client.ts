@@ -82,6 +82,75 @@ export interface AuthorizationParams {
 }
 
 // ============================================
+// Password Authentication Types
+// ============================================
+
+export interface RegisterWithPasswordParams {
+  name: string;
+  dob: string; // YYYY-MM-DD
+  email: string;
+  phone: string;
+  pincode: string;
+  city: string;
+  district: string;
+  state: string;
+  nation: string;
+  password: string;
+}
+
+export interface RegisterWithPasswordResult {
+  success: boolean;
+  universal_id?: string;
+  message: string;
+}
+
+export interface LoginWithPasswordParams {
+  identifier: string; // email, phone, or universal_id
+  password: string;
+}
+
+export interface LoginWithPasswordResult {
+  success: boolean;
+  user_id?: string;
+  universal_id?: string;
+  message: string;
+  tokens?: TokenResponse;
+  user?: UserInfo;
+}
+
+export interface ForgotPasswordParams {
+  identifier: string; // email, phone, or universal_id
+}
+
+export interface ForgotPasswordResult {
+  success: boolean;
+  message: string;
+  expires_at?: string;
+  reset_token?: string; // Only in development
+}
+
+export interface VerifyResetTokenParams {
+  token: string;
+}
+
+export interface VerifyResetTokenResult {
+  valid: boolean;
+  user_id?: string;
+  identifier?: string;
+  expires_at?: string;
+}
+
+export interface ResetPasswordParams {
+  token: string;
+  new_password: string;
+}
+
+export interface ResetPasswordResult {
+  success: boolean;
+  message: string;
+}
+
+// ============================================
 // Crypto Utilities (Browser-compatible)
 // ============================================
 
@@ -653,6 +722,102 @@ export class UGTAuthClient {
       tokens,
     };
     this.notifyListeners();
+  }
+
+  // ============================================
+  // Password Authentication Methods
+  // ============================================
+
+  async registerWithPassword(params: RegisterWithPasswordParams): Promise<RegisterWithPasswordResult> {
+    const response = await fetch(`https://${this.config.authDomain}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error_description || 'Registration failed');
+    }
+
+    return response.json();
+  }
+
+  async loginWithPassword(params: LoginWithPasswordParams): Promise<LoginWithPasswordResult> {
+    const response = await fetch(`https://${this.config.authDomain}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error_description || 'Login failed');
+    }
+
+    const result = await response.json();
+    
+    // If login successful and tokens returned, save them
+    if (result.success && result.tokens) {
+      saveTokens(result.tokens);
+      if (result.user) {
+        saveUser(result.user);
+        this.currentState = {
+          isAuthenticated: true,
+          user: result.user,
+          tokens: result.tokens,
+          universalId: result.user.universal_id,
+        };
+        this.notifyListeners();
+      }
+    }
+
+    return result;
+  }
+
+  async requestPasswordReset(params: ForgotPasswordParams): Promise<ForgotPasswordResult> {
+    const response = await fetch(`https://${this.config.authDomain}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error_description || 'Password reset request failed');
+    }
+
+    return response.json();
+  }
+
+  async verifyResetToken(params: VerifyResetTokenParams): Promise<VerifyResetTokenResult> {
+    const response = await fetch(`https://${this.config.authDomain}/auth/verify-reset-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error_description || 'Token verification failed');
+    }
+
+    return response.json();
+  }
+
+  async resetPassword(params: ResetPasswordParams): Promise<ResetPasswordResult> {
+    const response = await fetch(`https://${this.config.authDomain}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error_description || 'Password reset failed');
+    }
+
+    return response.json();
   }
 }
 

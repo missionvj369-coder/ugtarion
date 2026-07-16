@@ -6,7 +6,7 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { SignJWT, jwtVerify, importPKCS8, importSPKI, generateKeyPair, exportPKCS8, exportSPKI } from 'jose';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 
 // ============================================
 // Types
@@ -511,4 +511,168 @@ export function getSupabaseAdmin(): SupabaseClient {
   });
 
   return supabaseAdminClient;
+}
+
+// ============================================
+// Password Authentication Functions
+// ============================================
+
+export interface RegisterWithPasswordParams {
+  name: string;
+  dob: string; // YYYY-MM-DD
+  email: string;
+  phone: string;
+  pincode: string;
+  city: string;
+  district: string;
+  state: string;
+  nation: string;
+  password: string;
+}
+
+export interface RegisterWithPasswordResult {
+  success: boolean;
+  universal_id?: string;
+  message: string;
+}
+
+export async function registerUserWithPassword(
+  supabase: SupabaseClient,
+  params: RegisterWithPasswordParams
+): Promise<RegisterWithPasswordResult> {
+  const { data, error } = await supabase.rpc('register_user_with_password', {
+    p_name: params.name,
+    p_dob: params.dob,
+    p_email: params.email,
+    p_phone: params.phone,
+    p_pincode: params.pincode,
+    p_city: params.city,
+    p_district: params.district,
+    p_state: params.state,
+    p_nation: params.nation,
+    p_password: params.password,
+  });
+
+  if (error) throw new Error(`Registration failed: ${error.message}`);
+  return data[0] as RegisterWithPasswordResult;
+}
+
+export interface LoginWithPasswordParams {
+  identifier: string; // email, phone, or universal_id
+  password: string;
+}
+
+export interface LoginWithPasswordResult {
+  success: boolean;
+  user_id?: string;
+  universal_id?: string;
+  message: string;
+}
+
+export async function loginWithPassword(
+  supabase: SupabaseClient,
+  params: LoginWithPasswordParams
+): Promise<LoginWithPasswordResult> {
+  const { data, error } = await supabase.rpc('login_with_password', {
+    p_identifier: params.identifier,
+    p_password: params.password,
+  });
+
+  if (error) throw new Error(`Login failed: ${error.message}`);
+  return data[0] as LoginWithPasswordResult;
+}
+
+export interface ForgotPasswordParams {
+  identifier: string; // email, phone, or universal_id
+}
+
+export interface ForgotPasswordResult {
+  success: boolean;
+  message: string;
+  expires_at?: string;
+  // In development, token is returned for testing
+  reset_token?: string;
+}
+
+export async function requestPasswordReset(
+  supabase: SupabaseClient,
+  params: ForgotPasswordParams
+): Promise<ForgotPasswordResult> {
+  const { data, error } = await supabase.rpc('request_password_reset', {
+    p_identifier: params.identifier,
+  });
+
+  if (error) throw new Error(`Password reset request failed: ${error.message}`);
+  return data[0] as ForgotPasswordResult;
+}
+
+export interface VerifyResetTokenParams {
+  token: string;
+}
+
+export interface VerifyResetTokenResult {
+  valid: boolean;
+  user_id?: string;
+  identifier?: string;
+  expires_at?: string;
+}
+
+export async function verifyPasswordResetToken(
+  supabase: SupabaseClient,
+  params: VerifyResetTokenParams
+): Promise<VerifyResetTokenResult> {
+  const { data, error } = await supabase.rpc('verify_password_reset_token', {
+    p_token: params.token,
+  });
+
+  if (error) throw new Error(`Token verification failed: ${error.message}`);
+  return data[0] as VerifyResetTokenResult;
+}
+
+export interface ResetPasswordParams {
+  token: string;
+  new_password: string;
+}
+
+export interface ResetPasswordResult {
+  success: boolean;
+  message: string;
+}
+
+export async function resetPassword(
+  supabase: SupabaseClient,
+  params: ResetPasswordParams
+): Promise<ResetPasswordResult> {
+  const { data, error } = await supabase.rpc('reset_password', {
+    p_token: params.token,
+    p_new_password: params.new_password,
+  });
+
+  if (error) throw new Error(`Password reset failed: ${error.message}`);
+  return data[0] as ResetPasswordResult;
+}
+
+export interface UpdatePasswordParams {
+  user_id: string;
+  current_password: string;
+  new_password: string;
+}
+
+export interface UpdatePasswordResult {
+  success: boolean;
+  message: string;
+}
+
+export async function updatePassword(
+  supabase: SupabaseClient,
+  params: UpdatePasswordParams
+): Promise<UpdatePasswordResult> {
+  const { data, error } = await supabase.rpc('update_password', {
+    p_user_id: params.user_id,
+    p_current_password: params.current_password,
+    p_new_password: params.new_password,
+  });
+
+  if (error) throw new Error(`Password update failed: ${error.message}`);
+  return data[0] as UpdatePasswordResult;
 }

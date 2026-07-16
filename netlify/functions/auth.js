@@ -16,6 +16,415 @@
 const { createClient } = require('@supabase/supabase-js');
 const { SignJWT, jwtVerify, importPKCS8, importSPKI, generateKeyPair, exportPKCS8, exportSPKI } = require('jose');
 const { randomBytes, createHash } = require('crypto');
+const { sendPasswordResetEmail, sendPasswordResetConfirmationEmail } = require('./brevo-email');
+
+// ============================================
+// Password Authentication Handlers
+// ============================================
+
+async function handleRegister(event) {
+  const body = JSON.parse(event.body || '{}');
+  const { name, dob, email, phone, pincode, city, district, state, nation, password } = body;
+
+  // Validate required fields
+  if (!name || !dob || !email || !phone || !pincode || !city || !district || !state || !nation || !password) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Missing required fields' }),
+    };
+  }
+
+  // Validate password strength
+  if (password.length < 8) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Password must be at least 8 characters long' }),
+    };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Password must contain at least one uppercase letter' }),
+    };
+  }
+  if (!/[a-z]/.test(password)) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Password must contain at least one lowercase letter' }),
+    };
+  }
+  if (!/[0-9]/.test(password)) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Password must contain at least one number' }),
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('register_user_with_password', {
+      p_name: name,
+      p_dob: dob,
+      p_email: email,
+      p_phone: phone,
+      p_pincode: pincode,
+      p_city: city,
+      p_district: district,
+      p_state: state,
+      p_nation: nation,
+      p_password: password,
+    });
+
+    if (error) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'registration_failed', error_description: error.message }),
+      };
+    }
+
+    const result = data[0];
+    return {
+      statusCode: result.success ? 201 : 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({
+        success: result.success,
+        universal_id: result.universal_id,
+        message: result.message,
+      }),
+    };
+  } catch (e) {
+    console.error('Registration error:', e);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'server_error', error_description: 'Registration failed' }),
+    };
+  }
+}
+
+async function handleLogin(event) {
+  const body = JSON.parse(event.body || '{}');
+  const { identifier, password } = body;
+
+  if (!identifier || !password) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Identifier and password are required' }),
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('login_with_password', {
+      p_identifier: identifier,
+      p_password: password,
+    });
+
+    if (error) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'login_failed', error_description: error.message }),
+      };
+    }
+
+    const result = data[0];
+    
+    if (!result.success) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ 
+          success: false, 
+          message: result.message 
+        }),
+      };
+    }
+
+    // Create auth session for the default platform
+    const platform = await getPlatformByClientId(PLATFORM_CLIENT_ID);
+    if (!platform) {
+      return {
+        statusCode: 500,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'server_error', error_description: 'Platform not configured' }),
+      };
+    }
+
+    const tokens = await createAuthSession(result.user_id, platform.id, {
+      userAgent: event.headers['user-agent'],
+      ipAddress: event.headers['x-forwarded-for'] || event.headers['x-real-ip'],
+    });
+
+    // Get user info
+    const userInfo = await buildUserInfo(result.universal_id, platform.id, ['profile', 'email', 'rankings']);
+
+    return {
+      statusCode: 200,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({
+        success: true,
+        user_id: result.user_id,
+        universal_id: result.universal_id,
+        message: result.message,
+        tokens,
+        user: userInfo,
+      }),
+    };
+  } catch (e) {
+    console.error('Login error:', e);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'server_error', error_description: 'Login failed' }),
+    };
+  }
+}
+
+async function handleForgotPassword(event) {
+  const body = JSON.parse(event.body || '{}');
+  const { identifier } = body;
+
+  if (!identifier) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Identifier is required' }),
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('request_password_reset', {
+      p_identifier: identifier,
+    });
+
+    if (error) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'reset_failed', error_description: error.message }),
+      };
+    }
+
+    const result = data[0];
+    
+    // If successful and we have a reset token, send the email
+    if (result.success && result.reset_token) {
+      // Get the user's email from the identifier or profile
+      let userEmail = identifier;
+      let userName = null;
+      
+      // If identifier is not an email, try to get the user's email from the profile
+      if (!identifier.includes('@')) {
+        const { data: profile } = await supabase.rpc('login_user_atomic', {
+          p_identifier: identifier,
+        });
+        if (profile && profile.length > 0) {
+          userEmail = profile[0].email;
+          userName = profile[0].name;
+        }
+      } else {
+        // If identifier is email, get name from profile
+        const { data: profile } = await supabase.rpc('login_user_atomic', {
+          p_identifier: identifier,
+        });
+        if (profile && profile.length > 0) {
+          userName = profile[0].name;
+        }
+      }
+      
+      // Build the reset URL
+      const frontendUrl = process.env.FRONTEND_URL || 'https://universal-guard-trust.netlify.app';
+      const resetUrl = `${frontendUrl}/reset-password?token=${result.reset_token}`;
+      
+      // Send password reset email via Brevo
+      try {
+        await sendPasswordResetEmail(userEmail, resetUrl, userName);
+        console.log(`Password reset email sent to ${userEmail}`);
+      } catch (emailError) {
+        console.error('Failed to send password reset email:', emailError);
+        // Don't fail the request if email fails - log and continue
+        // In production, you might want to queue this for retry
+      }
+    }
+    
+    return {
+      statusCode: 200,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({
+        success: result.success,
+        message: result.message,
+        expires_at: result.expires_at,
+        // In development, include the token for testing
+        ...(process.env.NODE_ENV !== 'production' && result.reset_token ? { reset_token: result.reset_token } : {}),
+      }),
+    };
+  } catch (e) {
+    console.error('Forgot password error:', e);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'server_error', error_description: 'Password reset request failed' }),
+    };
+  }
+}
+
+async function handleVerifyResetToken(event) {
+  const body = JSON.parse(event.body || '{}');
+  const { token } = body;
+
+  if (!token) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Token is required' }),
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('verify_password_reset_token', {
+      p_token: token,
+    });
+
+    if (error) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'verification_failed', error_description: error.message }),
+      };
+    }
+
+    const result = data[0];
+    return {
+      statusCode: 200,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({
+        valid: result.valid,
+        user_id: result.user_id,
+        identifier: result.identifier,
+        expires_at: result.expires_at,
+      }),
+    };
+  } catch (e) {
+    console.error('Verify reset token error:', e);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'server_error', error_description: 'Token verification failed' }),
+    };
+  }
+}
+
+async function handleResetPassword(event) {
+  const body = JSON.parse(event.body || '{}');
+  const { token, new_password } = body;
+
+  if (!token || !new_password) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Token and new password are required' }),
+    };
+  }
+
+  // Validate password strength
+  if (new_password.length < 8) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Password must be at least 8 characters long' }),
+    };
+  }
+  if (!/[A-Z]/.test(new_password)) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Password must contain at least one uppercase letter' }),
+    };
+  }
+  if (!/[a-z]/.test(new_password)) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Password must contain at least one lowercase letter' }),
+    };
+  }
+  if (!/[0-9]/.test(new_password)) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'invalid_request', error_description: 'Password must contain at least one number' }),
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('reset_password', {
+      p_token: token,
+      p_new_password: new_password,
+    });
+
+    if (error) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(event.headers.origin),
+        body: JSON.stringify({ error: 'reset_failed', error_description: error.message }),
+      };
+    }
+
+    const result = data[0];
+    
+    // If successful, send confirmation email
+    if (result.success) {
+      // Get the user's email from the token
+      const { data: tokenData } = await supabase.rpc('verify_password_reset_token', {
+        p_token: token,
+      });
+      
+      if (tokenData && tokenData.length > 0 && tokenData[0].identifier) {
+        const userEmail = tokenData[0].identifier;
+        
+        // Get user name from profile
+        let userName = null;
+        const { data: profile } = await supabase.rpc('login_user_atomic', {
+          p_identifier: userEmail,
+        });
+        if (profile && profile.length > 0) {
+          userName = profile[0].name;
+        }
+        
+        // Send password reset confirmation email via Brevo
+        try {
+          await sendPasswordResetConfirmationEmail(userEmail, userName);
+          console.log(`Password reset confirmation email sent to ${userEmail}`);
+        } catch (emailError) {
+          console.error('Failed to send password reset confirmation email:', emailError);
+          // Don't fail the request if email fails - log and continue
+        }
+      }
+    }
+    
+    return {
+      statusCode: result.success ? 200 : 400,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({
+        success: result.success,
+        message: result.message,
+      }),
+    };
+  } catch (e) {
+    console.error('Reset password error:', e);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(event.headers.origin),
+      body: JSON.stringify({ error: 'server_error', error_description: 'Password reset failed' }),
+    };
+  }
+}
 
 // ============================================
 // Configuration & Supabase Client
@@ -924,6 +1333,22 @@ exports.handler = async function(event, context) {
     }
     if (path === '/jwks' && method === 'GET') {
       return await handleJWKS(event);
+    }
+    // Password Authentication Endpoints
+    if (path === '/register' && method === 'POST') {
+      return await handleRegister(event);
+    }
+    if (path === '/login' && method === 'POST') {
+      return await handleLogin(event);
+    }
+    if (path === '/forgot-password' && method === 'POST') {
+      return await handleForgotPassword(event);
+    }
+    if (path === '/verify-reset-token' && method === 'POST') {
+      return await handleVerifyResetToken(event);
+    }
+    if (path === '/reset-password' && method === 'POST') {
+      return await handleResetPassword(event);
     }
 
     return {

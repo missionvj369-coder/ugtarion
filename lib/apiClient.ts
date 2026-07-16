@@ -222,3 +222,49 @@ export function setActiveUserId(id: string | null): void {
     localStorage.setItem(ACTIVE_USER_ID_KEY, id);
   }
 }
+
+// ============================================
+// Password Reset API Functions
+// ============================================
+
+export interface PasswordResetRequestResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface PasswordResetConfirmResponse {
+  success: boolean;
+  message: string;
+}
+
+/**
+ * Request a password reset email
+ * @param email - User's email address
+ * @param redirectUrl - Optional custom redirect URL for the reset link
+ * @returns Promise resolving to response with success status
+ */
+export async function requestPasswordReset(
+  email: string,
+  redirectUrl?: string
+): Promise<PasswordResetRequestResponse> {
+  return apiRequest<PasswordResetRequestResponse>('/auth/password/reset-request', {
+    method: 'POST',
+    body: JSON.stringify({ email, redirect_url: redirectUrl }),
+  });
+}
+
+/**
+ * Confirm password reset with token and new password
+ * @param token - Reset token from email link
+ * @param password - New password (min 8 characters)
+ * @returns Promise resolving to response with success status
+ */
+export async function confirmPasswordReset(
+  token: string,
+  password: string
+): Promise<PasswordResetConfirmResponse> {
+  return apiRequest<PasswordResetConfirmResponse>('/auth/password/reset-confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
+  });
+}

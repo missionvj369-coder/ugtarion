@@ -14,6 +14,8 @@ import SupportersSection from './components/SupportersSection';
 import Footer from './components/ContactSection';
 import FadeIn from './components/FadeIn';
 import VerificationPage from './components/VerificationPage';
+import { PasswordResetRequest } from './components/PasswordResetRequest';
+import { PasswordResetConfirm } from './components/PasswordResetConfirm';
 import { createUGTAuthClient, UGTAuthClient } from './lib/ugt-auth-client';
 
 const App: React.FC = () => {
@@ -65,6 +67,8 @@ const App: React.FC = () => {
             )} />
             <Route path="/verify/:uid" element={<VerificationPage />} />
             <Route path="/auth/callback" element={<VerificationPage />} />
+            <Route path="/password-reset" element={<PasswordResetRequest onBackToLogin={() => {}} />} />
+            <Route path="/password-reset/confirm" element={<PasswordResetConfirm onBackToLogin={() => {}} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

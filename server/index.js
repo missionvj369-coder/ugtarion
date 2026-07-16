@@ -16,6 +16,114 @@ import {
   createSupabaseAdmin,
 } from '../lib/api-core.ts';
 
+// Brevo Email Configuration
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const BREVO_TEMPLATE_ID = parseInt(process.env.BREVO_TEMPLATE_ID || '1', 10);
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@yourdomain.com';
+const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Universal Guard Trust';
+
+/**
+ * @typedef {Object} BrevoEmailParams
+ * @property {{email: string, name?: string}[]} to
+ * @property {number} templateId
+ * @property {Record<string, string>} params
+ * @property {Record<string, string>} [headers]
+ */
+
+/**
+ * @typedef {Object} BrevoResponse
+ * @property {string} messageId
+ */
+
+/**
+ * Send a transactional email using Brevo API v3
+ * @param {BrevoEmailParams} params
+ * @returns {Promise<BrevoResponse>}
+ */
+async function sendBrevoEmail(params) {
+  if (!BREVO_API_KEY) {
+    throw new Error('BREVO_API_KEY is not configured. Please set it in environment variables.');
+  }
+
+  const payload = {
+    sender: {
+      email: BREVO_SENDER_EMAIL,
+      name: BREVO_SENDER_NAME,
+    },
+    to: params.to,
+    templateId: params.templateId,
+    params: params.params,
+    headers: params.headers || {},
+  };
+
+  const response = await fetch(BREVO_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': BREVO_API_KEY,
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.message || `Brevo API error: ${response.status} ${response.statusText}`;
+    throw new Error(`Failed to send email via Brevo: ${errorMessage}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Send password reset email using Brevo template
+ * @param {string} email - Recipient email address
+ * @param {string} resetUrl - Full reset URL with token (e.g., https://app.domain.com/reset-password?token=xxx)
+ * @param {string} [userName] - Optional user name for personalization
+ * @returns {Promise<BrevoResponse>}
+ */
+async function sendPasswordResetEmail(email, resetUrl, userName) {
+  const params = {
+    to: [{ email, name: userName || email.split('@')[0] }],
+    templateId: BREVO_TEMPLATE_ID,
+    params: {
+      RESET_URL: resetUrl,
+      USER_NAME: userName || email.split('@')[0],
+      EMAIL: email,
+    },
+    headers: {
+      'X-UGT-Email-Type': 'password-reset',
+    },
+  };
+
+  return sendBrevoEmail(params);
+}
+
+/**
+ * Send password reset confirmation email (after successful reset)
+ * @param {string} email - Recipient email address
+ * @param {string} [userName] - Optional user name for personalization
+ * @returns {Promise<BrevoResponse>}
+ */
+async function sendPasswordResetConfirmationEmail(email, userName) {
+  const params = {
+    to: [{ email, name: userName || email.split('@')[0] }],
+    templateId: BREVO_TEMPLATE_ID, // You may want a different template ID for confirmation
+    params: {
+      RESET_URL: '', // Not needed for confirmation
+      USER_NAME: userName || email.split('@')[0],
+      EMAIL: email,
+      MESSAGE: 'Your password has been successfully reset. If you did not make this change, please contact support immediately.',
+    },
+    headers: {
+      'X-UGT-Email-Type': 'password-reset-confirmation',
+    },
+  };
+
+  return sendBrevoEmail(params);
+}
+
 // Load server-only environment first, then fallback to local if missing.
 dotenv.config({ path: '.env.server' });
 dotenv.config({ path: '.env.local' });
@@ -737,6 +845,175 @@ app.get('/auth/jwks', async (req, res) => {
 
   res.set('Cache-Control', 'public, max-age=3600');
   res.json(jwks);
+});
+
+// ============================================
+// Password Reset Endpoints
+// ============================================
+
+// Password Reset Request - POST /auth/password/reset-request
+app.post('/auth/password/reset-request', async (req, res) => {
+  try {
+    const { email, redirect_url } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'invalid_request', error_description: 'Email is required' });
+    }
+
+    // Normalize email
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check if user exists (but don't reveal if they don't for security)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, universal_id, full_name, email')
+      .eq('email', normalizedEmail)
+      .single();
+
+    // Always return success for security (don't reveal if email exists)
+    // But only send email if user exists
+    if (profile) {
+      // Generate reset token (32 bytes = 64 hex chars)
+      const resetToken = randomBytes(32).toString('hex');
+      const tokenHash = createHash('sha256').update(resetToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour expiry
+
+      // Store reset token in database
+      const { error: tokenError } = await supabase
+        .from('password_reset_tokens')
+        .insert({
+          user_id: profile.id,
+          token_hash: tokenHash,
+          expires_at: expiresAt,
+        });
+
+      if (tokenError) {
+        console.error('Failed to store reset token:', tokenError);
+        // Don't reveal the error to the user
+      } else {
+        // Build reset URL
+        const baseUrl = redirect_url || process.env.FRONTEND_URL || 'http://localhost:5173';
+        const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+
+        // Send password reset email via Brevo
+        try {
+          await sendPasswordResetEmail(normalizedEmail, resetUrl, profile.full_name);
+          console.log(`Password reset email sent to ${normalizedEmail}`);
+        } catch (emailError) {
+          console.error('Failed to send password reset email:', emailError);
+          // Don't reveal email failure to user
+        }
+      }
+    }
+
+    // Always return success for security (don't reveal if email exists)
+    res.json({ 
+      success: true, 
+      message: 'If an account with that email exists, a password reset link has been sent.' 
+    });
+  } catch (error) {
+    console.error('Password reset request error:', error);
+    res.status(500).json({ error: 'server_error', error_description: 'Failed to process password reset request' });
+  }
+});
+
+// Password Reset Confirm - POST /auth/password/reset-confirm
+app.post('/auth/password/reset-confirm', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ error: 'invalid_request', error_description: 'Token and new password are required' });
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'weak_password', error_description: 'Password must be at least 8 characters long' });
+    }
+
+    // Hash the provided token to look up in database
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    // Find valid reset token
+    const { data: resetToken, error: tokenError } = await supabase
+      .from('password_reset_tokens')
+      .select('id, user_id, expires_at, used')
+      .eq('token_hash', tokenHash)
+      .single();
+
+    if (tokenError || !resetToken) {
+      return res.status(400).json({ error: 'invalid_token', error_description: 'Invalid or expired reset token' });
+    }
+
+    // Check if token is expired
+    if (new Date(resetToken.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'token_expired', error_description: 'Reset token has expired' });
+    }
+
+    // Check if token already used
+    if (resetToken.used) {
+      return res.status(400).json({ error: 'token_used', error_description: 'Reset token has already been used' });
+    }
+
+    // Hash new password
+    const passwordHash = await hashPassword(password);
+
+    // Update user's password
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ password_hash: passwordHash })
+      .eq('id', resetToken.user_id);
+
+    if (updateError) {
+      console.error('Failed to update password:', updateError);
+      return res.status(500).json({ error: 'server_error', error_description: 'Failed to update password' });
+    }
+
+    // Mark token as used
+    const { error: markError } = await supabase
+      .from('password_reset_tokens')
+      .update({ used: true })
+      .eq('id', resetToken.id);
+
+    if (markError) {
+      console.error('Failed to mark token as used:', markError);
+    }
+
+    // Revoke all existing refresh tokens for this user (force re-login)
+    const { error: revokeError } = await supabase
+      .from('refresh_tokens')
+      .update({ revoked: true })
+      .eq('user_id', resetToken.user_id);
+
+    if (revokeError) {
+      console.error('Failed to revoke refresh tokens:', revokeError);
+    }
+
+    // Get user info for confirmation email
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', resetToken.user_id)
+      .single();
+
+    // Send confirmation email
+    if (profile) {
+      try {
+        await sendPasswordResetConfirmationEmail(profile.email, profile.full_name);
+        console.log(`Password reset confirmation email sent to ${profile.email}`);
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Password has been successfully reset. Please log in with your new password.' 
+    });
+  } catch (error) {
+    console.error('Password reset confirm error:', error);
+    res.status(500).json({ error: 'server_error', error_description: 'Failed to reset password' });
+  }
 });
 
 // ============================================
