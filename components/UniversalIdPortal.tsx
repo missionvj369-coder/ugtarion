@@ -62,6 +62,7 @@ import {
 import type { UniversalIdRecord } from '../lib/apiClient';
 import SectionWrapper from './SectionWrapper';
 import { createUGTAuthClient, UGTAuthClient } from '../lib/ugt-auth-client';
+import { sendEmailOtp, verifyEmailOtp, sendRegistrationEmailOtp, verifyRegistrationEmailOtp, signOutSupabase } from '../lib/supabaseClient';
 
 // Retry configuration
 const MAX_RETRIES = 3;
@@ -457,12 +458,12 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   onAuthChange,
   authClient: authClientProp,
 }) => {
-  const [activeTab, setActiveTab] = useState<'register' | 'login' | 'dashboard'>('register');
+  const [activeTab, setActiveTab] = useState<'register' | 'login' | 'email-otp' | 'dashboard'>('register');
   const [currentUser, setCurrentUser] = useState<UniversalIdRecord | null>(null);
   const [totalRegistrations, setTotalRegistrations] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [view, setView] = useState<'register' | 'login' | 'id-card'>('register');
+  const [view, setView] = useState<'register' | 'login' | 'email-otp' | 'id-card'>('register');
   
   // Registration Form States
   const [name, setName] = useState('');
@@ -477,6 +478,14 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   
   // Login Form States
   const [loginIdentifier, setLoginIdentifier] = useState('');
+  
+  // Email OTP Form States
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpStep, setOtpStep] = useState<'email' | 'verify'>('email');
+  const [otpMode, setOtpMode] = useState<'login' | 'register'>('login');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpResendCooldown, setOtpResendCooldown] = useState(0);
   
   // UI Status
   const [error, setError] = useState('');
@@ -720,6 +729,143 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     }
   };
 
+  // Email OTP Handlers
+  const handleOtpEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+
+    if (!otpEmail) {
+      setError('Please enter your email address.');
+      setIsLoading(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(otpEmail)) {
+      setError('Please enter a valid email address.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      if (otpMode === 'login') {
+        await sendEmailOtp(otpEmail);
+      } else {
+        await sendRegistrationEmailOtp(otpEmail);
+      }
+      setOtpStep('verify');
+      setOtpSent(true);
+      setOtpResendCooldown(60);
+      setSuccess(`6-digit code sent to ${otpEmail}. Check your inbox (and spam folder).`);
+      
+      // Start cooldown timer
+      const cooldownInterval = setInterval(() => {
+        setOtpResendCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(cooldownInterval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+
+    if (!otpCode || otpCode.length !== 6) {
+      setError('Please enter the 6-digit code.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      let user: UniversalIdRecord;
+      
+      if (otpMode === 'login') {
+        user = await verifyEmailOtp(otpEmail, otpCode);
+      } else {
+        try {
+          user = await verifyRegistrationEmailOtp(otpEmail, otpCode);
+        } catch (regErr: any) {
+          if (regErr.message === 'REGISTRATION_REQUIRED') {
+            // User authenticated but needs to complete profile registration
+            setError('Email verified! Please complete your registration to get your Universal ID.');
+            setActiveTab('register');
+            setEmail(otpEmail);
+            setIsLoading(false);
+            return;
+          }
+          throw regErr;
+        }
+      }
+      
+      setCurrentUser(user);
+      setActiveTab('dashboard');
+      setView('id-card');
+      setSuccess('Consciousness aligned. Welcome to the collective.');
+      onAuthChange?.(user);
+      
+      // Reset OTP state
+      setOtpStep('email');
+      setOtpCode('');
+      setOtpEmail('');
+      setOtpSent(false);
+      
+      setTimeout(() => {
+        setActiveTab('dashboard');
+      }, 1200);
+    } catch (err: any) {
+      if (err.message.includes('expired') || err.message.includes('invalid')) {
+        setError('Invalid or expired code. Please request a new one.');
+      } else {
+        setError(err.message || 'Verification failed. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+
+    try {
+      if (otpMode === 'login') {
+        await sendEmailOtp(otpEmail);
+      } else {
+        await sendRegistrationEmailOtp(otpEmail);
+      }
+      setOtpResendCooldown(60);
+      setSuccess(`New code sent to ${otpEmail}.`);
+      
+      const cooldownInterval = setInterval(() => {
+        setOtpResendCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(cooldownInterval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend code. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const renderContent = () => (
     <>
       {(isLoading || isInitializing) && !currentUser ? (
@@ -760,6 +906,20 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                 >
                   <LogIn className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
                   Enter Identity
+                </button>
+                <button
+                  onClick={() => { setActiveTab('email-otp'); setError(''); setOtpStep('email'); setOtpMode('login'); setOtpEmail(''); setOtpCode(''); }}
+                  disabled={isLoading}
+                  role="tab"
+                  aria-selected={activeTab === 'email-otp'}
+                  aria-controls="email-otp-panel"
+                  id="email-otp-tab"
+                  className={`flex-1 py-2.5 text-xs font-medium tracking-wide rounded-lg transition-all duration-300 ${
+                    activeTab === 'email-otp' ? 'bg-zinc-850 text-white shadow' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Mail className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
+                  Email OTP
                 </button>
               </div>
 
@@ -965,6 +1125,113 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                     <span>Generate My Sovereign ID</span>
                   </button>
                 </form>
+              ) : activeTab === 'email-otp' ? (
+                /* EMAIL OTP FORM */
+                <div id="email-otp-panel" role="tabpanel" aria-labelledby="email-otp-tab" className="space-y-6 pt-4">
+                  {otpStep === 'email' ? (
+                    <form onSubmit={handleOtpEmailSubmit} className="space-y-6">
+                      <div>
+                        <label htmlFor="otp-email" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-2 font-semibold font-mono">Enter Your Registered Email</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-3.5 text-zinc-500" aria-hidden="true"><Mail className="w-4 h-4" /></span>
+                          <input 
+                            ref={firstInputRef}
+                            id="otp-email"
+                            type="email" 
+                            required
+                            disabled={isLoading}
+                            autoComplete="email"
+                            placeholder="e.g. guardian@universe.trust"
+                            value={otpEmail}
+                            onChange={(e) => setOtpEmail(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs sm:text-sm font-light transition-all outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => { setOtpMode('login'); handleOtpEmailSubmit(new Event('submit') as unknown as React.FormEvent); }}
+                          disabled={isLoading}
+                          className="flex-1 bg-white text-zinc-950 hover:bg-zinc-100 font-medium py-3.5 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
+                        >
+                          {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> : <>Sign In with OTP</>}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setOtpMode('register'); handleOtpEmailSubmit(new Event('submit') as unknown as React.FormEvent); }}
+                          disabled={isLoading}
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3.5 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
+                        >
+                          {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <>Register with OTP</>}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleOtpVerifySubmit} className="space-y-6">
+                      <div className="text-center">
+                        <Mail className="w-10 h-10 text-indigo-400 mx-auto mb-3" aria-hidden="true" />
+                        <p className="text-zinc-400 text-xs mb-1">We've sent a 6-digit code to</p>
+                        <p className="text-white font-mono text-sm">{otpEmail}</p>
+                      </div>
+
+                      <div>
+                        <label htmlFor="otp-code" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-2 font-semibold font-mono">Enter 6-Digit Code</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-3.5 text-zinc-500" aria-hidden="true"><Lock className="w-4 h-4" /></span>
+                          <input 
+                            ref={firstInputRef}
+                            id="otp-code"
+                            type="text" 
+                            required
+                            disabled={isLoading}
+                            autoComplete="one-time-code"
+                            inputMode="numeric"
+                            maxLength={6}
+                            placeholder="000000"
+                            value={otpCode}
+                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                            className="w-full pl-10 pr-4 py-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs sm:text-sm font-light transition-all outline-none text-center tracking-widest font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isLoading || otpCode.length !== 6}
+                        className="w-full bg-white text-zinc-950 hover:bg-zinc-100 font-medium py-3.5 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
+                        ) : (
+                          <>
+                            <span>Verify & {otpMode === 'login' ? 'Sign In' : 'Complete Registration'}</span>
+                            <ChevronRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <button
+                          type="button"
+                          onClick={() => { setOtpStep('email'); setOtpCode(''); setError(''); setSuccess(''); }}
+                          className="text-zinc-400 hover:text-indigo-400 transition-colors"
+                        >
+                          ← Change Email
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResendOtp}
+                          disabled={isLoading || otpResendCooldown > 0}
+                          className="text-zinc-400 hover:text-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {otpResendCooldown > 0 ? `Resend in ${otpResendCooldown}s` : 'Resend Code'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
               ) : (
                 /* LOGIN FORM */
                 <form onSubmit={handleLogin} id="login-panel" role="tabpanel" aria-labelledby="login-tab" className="space-y-6 pt-4">
