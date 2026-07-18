@@ -213,8 +213,10 @@ async function handleForgotPassword(event) {
 
     const result = data[0];
     
-    // If successful and we have a reset token, send the email
-    if (result.success && result.reset_token) {
+    // If successful and we have a reset token (returned in message field), send the email
+    if (result.success && result.message && result.message.length > 20) {
+      const resetToken = result.message; // Token is returned in the message field
+      
       // Get the user's email from the identifier or profile
       let userEmail = identifier;
       let userName = null;
@@ -239,8 +241,8 @@ async function handleForgotPassword(event) {
       }
       
       // Build the reset URL
-      const frontendUrl = process.env.FRONTEND_URL || 'https://universal-guard-trust.netlify.app';
-      const resetUrl = `${frontendUrl}/reset-password?token=${result.reset_token}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'https://ugtglobal.space';
+      const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
       
       // Send password reset email via Brevo
       try {
@@ -261,7 +263,7 @@ async function handleForgotPassword(event) {
         message: result.message,
         expires_at: result.expires_at,
         // In development, include the token for testing
-        ...(process.env.NODE_ENV !== 'production' && result.reset_token ? { reset_token: result.reset_token } : {}),
+        ...(process.env.NODE_ENV !== 'production' && result.success ? { reset_token: result.message } : {}),
       }),
     };
   } catch (e) {
