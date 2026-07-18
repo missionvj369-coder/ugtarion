@@ -345,6 +345,7 @@ GRANT EXECUTE ON FUNCTION public.register_user_with_password(TEXT, DATE, TEXT, T
 -- ============================================
 -- 10. Update login_user_atomic to include password_hash
 -- ============================================
+DROP FUNCTION IF EXISTS public.login_user_atomic(TEXT);
 CREATE OR REPLACE FUNCTION public.login_user_atomic(p_identifier TEXT)
 RETURNS TABLE (
     id BIGINT,
