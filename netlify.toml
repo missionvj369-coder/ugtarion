@@ -2,6 +2,9 @@
   functions = "netlify/functions"
   command = "npm run build"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "scripts/**,scripts/*"
+
 [dev]
   command = "npm run start:api"
   functions = "netlify/functions"
