@@ -196,10 +196,10 @@ export async function registerUser(data: {
   });
 }
 
-export async function loginUser(identifier: string): Promise<UniversalIdRecord> {
+export async function loginUser(identifier: string, password: string): Promise<UniversalIdRecord> {
   return apiRequest<UniversalIdRecord>('/api/login', {
     method: 'POST',
-    body: JSON.stringify({ identifier }),
+    body: JSON.stringify({ identifier, password }),
   });
 }
 
@@ -247,7 +247,7 @@ export async function requestPasswordReset(
   email: string,
   redirectUrl?: string
 ): Promise<PasswordResetRequestResponse> {
-  return apiRequest<PasswordResetRequestResponse>('/auth/password/reset-request', {
+  return apiRequest<PasswordResetRequestResponse>('/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify({ email, redirect_url: redirectUrl }),
   });
@@ -263,8 +263,8 @@ export async function confirmPasswordReset(
   token: string,
   password: string
 ): Promise<PasswordResetConfirmResponse> {
-  return apiRequest<PasswordResetConfirmResponse>('/auth/password/reset-confirm', {
+  return apiRequest<PasswordResetConfirmResponse>('/auth/reset-password', {
     method: 'POST',
-    body: JSON.stringify({ token, password }),
+    body: JSON.stringify({ token, new_password: password }),
   });
 }

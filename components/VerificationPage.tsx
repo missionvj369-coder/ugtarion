@@ -73,20 +73,15 @@ const VerificationPage: React.FC = () => {
     }
 
     // Regular verification flow (QR code scan or direct link)
-    // For security, we now require OAuth flow for verification
-    // Direct UID access is no longer allowed for security
+    // Allow direct UID access for verification (public verification page)
     if (!uid) {
       setError('No Universal ID provided');
       setLoading(false);
       return;
     }
 
-    // For direct UID access, we redirect to OAuth flow
-    // This prevents random UGT number access
-    const authUrl = authClient.buildAuthorizationUrl({
-      state: `verify:${uid}`,
-    });
-    window.location.href = authUrl;
+    // Fetch verification data directly for the UID
+    fetchVerificationData(uid);
   }, [uid, searchParams, authClient]);
 
   const handleOAuthCallback = async (code: string, state?: string) => {
@@ -178,6 +173,27 @@ const VerificationPage: React.FC = () => {
       alert('Failed to create session. Please try again.');
     } finally {
       setLoggingIn(false);
+    }
+  };
+
+  const fetchVerificationData = async (uid: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      // Fetch verification data from the API
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/verify/${uid}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Universal ID not found in the registry');
+        }
+        throw new Error('Failed to fetch verification data');
+      }
+      const verificationData = await response.json();
+      setData(verificationData);
+    } catch (err: any) {
+      setError(err.message || 'Failed to verify Universal ID');
+    } finally {
+      setLoading(false);
     }
   };
 

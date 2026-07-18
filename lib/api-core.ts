@@ -44,10 +44,15 @@ export const registerSchema = z.object({
   district: z.string().min(1, 'District is required'),
   state: z.string().min(1, 'State is required'),
   nation: z.string().min(1, 'Nation is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
 });
 
 export const loginSchema = z.object({
   identifier: z.string().min(1, 'Universal ID or Email is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 // Create Supabase client with service role key (server-side only)
@@ -140,11 +145,11 @@ export async function handleRegister(
     return { error: 'Invalid registration payload', details: parse.error.errors };
   }
 
-  const { name, dob, email, phone, pincode, city, district, state, nation } = parse.data;
+  const { name, dob, email, phone, pincode, city, district, state, nation, password } = parse.data;
 
   try {
-    // Use atomic RPC function to avoid race conditions
-    const { data, error } = await supabase.rpc('register_user_atomic', {
+    // Use atomic RPC function with password to avoid race conditions
+    const { data, error } = await supabase.rpc('register_user_with_password', {
       p_name: name.trim(),
       p_dob: dob,
       p_email: email.trim().toLowerCase(),
@@ -154,6 +159,7 @@ export async function handleRegister(
       p_district: district.trim(),
       p_state: state.trim(),
       p_nation: nation.trim(),
+      p_password: password,
     });
 
     if (error) throw new Error(error.message);
@@ -161,7 +167,22 @@ export async function handleRegister(
       return { error: 'Registration failed - no data returned' };
     }
 
-    return { data: buildRecord(data[0], data[0]) };
+    const result = data[0];
+    if (!result.success) {
+      return { error: result.message || 'Registration failed' };
+    }
+
+    // Get the full profile with standings
+    const { data: profileData, error: profileError } = await supabase.rpc('login_user_atomic', {
+      p_identifier: result.universal_id,
+    });
+
+    if (profileError) throw new Error(profileError.message);
+    if (!profileData || profileData.length === 0) {
+      return { error: 'Profile not found after registration' };
+    }
+
+    return { data: buildRecord(profileData[0], profileData[0]) };
   } catch (err: any) {
     // Handle duplicate email error
     if (err.message?.includes('already associated')) {
@@ -184,19 +205,36 @@ export async function handleLogin(
     return { error: 'Invalid login payload', details: parse.error.errors };
   }
 
-  const { identifier } = parse.data;
+  const { identifier, password } = parse.data;
 
   try {
-    const { data, error } = await supabase.rpc('login_user_atomic', {
+    // Use the new password-based login function
+    const { data, error } = await supabase.rpc('login_with_password', {
       p_identifier: identifier.trim().toLowerCase(),
+      p_password: password,
     });
 
     if (error) throw new Error(error.message);
     if (!data || data.length === 0) {
-      return { error: 'Universal ID or Email not found. Please check spelling or register first.' };
+      return { error: 'Invalid credentials. Please check your Universal ID/Email/Phone and password.' };
     }
 
-    return { data: buildRecord(data[0], data[0]) };
+    const result = data[0];
+    if (!result.success) {
+      return { error: result.message || 'Invalid credentials' };
+    }
+
+    // Get the full profile with standings
+    const { data: profileData, error: profileError } = await supabase.rpc('login_user_atomic', {
+      p_identifier: result.universal_id,
+    });
+
+    if (profileError) throw new Error(profileError.message);
+    if (!profileData || profileData.length === 0) {
+      return { error: 'Profile not found after login' };
+    }
+
+    return { data: buildRecord(profileData[0], profileData[0]) };
   } catch (err: any) {
     return { error: err.message || 'Login failed' };
   }

@@ -1017,6 +1017,20 @@ app.post('/auth/password/reset-confirm', async (req, res) => {
 });
 
 // ============================================
+// Password Login Endpoint
+// ============================================
+
+// POST /api/login - Password-based login
+app.post('/api/login', async (req, res) => {
+  const result = await handleLogin(supabase, req.body);
+  if (result.error) {
+    const status = result.error.includes('not found') ? 404 : 500;
+    return res.status(status).json({ error: result.error, details: result.details });
+  }
+  return res.json(result.data);
+});
+
+// ============================================
 // Original API Routes
 // ============================================
 
@@ -1048,16 +1062,6 @@ app.post('/api/register', async (req, res) => {
   const result = await handleRegister(supabase, req.body);
   if (result.error) {
     const status = result.error.includes('already associated') || result.error.includes('phone number is already registered') ? 409 : 500;
-    return res.status(status).json({ error: result.error, details: result.details });
-  }
-  return res.json(result.data);
-});
-
-// POST /api/login
-app.post('/api/login', async (req, res) => {
-  const result = await handleLogin(supabase, req.body);
-  if (result.error) {
-    const status = result.error.includes('not found') ? 404 : 500;
     return res.status(status).json({ error: result.error, details: result.details });
   }
   return res.json(result.data);

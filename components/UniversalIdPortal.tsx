@@ -62,7 +62,7 @@ import {
 import type { UniversalIdRecord } from '../lib/apiClient';
 import SectionWrapper from './SectionWrapper';
 import { createUGTAuthClient, UGTAuthClient } from '../lib/ugt-auth-client';
-import { sendEmailOtp, verifyEmailOtp, sendRegistrationEmailOtp, verifyRegistrationEmailOtp, signOutSupabase } from '../lib/supabaseClient';
+import { registerUserWithPassword, loginWithPassword, signOutSupabase, requestPasswordReset, verifyPasswordResetToken, resetPassword } from '../lib/supabaseClient';
 
 // Retry configuration
 const MAX_RETRIES = 3;
@@ -458,12 +458,12 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   onAuthChange,
   authClient: authClientProp,
 }) => {
-  const [activeTab, setActiveTab] = useState<'register' | 'login' | 'email-otp' | 'dashboard'>('register');
+  const [activeTab, setActiveTab] = useState<'register' | 'login' | 'forgot' | 'dashboard'>('register');
   const [currentUser, setCurrentUser] = useState<UniversalIdRecord | null>(null);
   const [totalRegistrations, setTotalRegistrations] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [view, setView] = useState<'register' | 'login' | 'email-otp' | 'id-card'>('register');
+  const [view, setView] = useState<'register' | 'login' | 'id-card'>('register');
   
   // Registration Form States
   const [name, setName] = useState('');
@@ -478,14 +478,14 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   
   // Login Form States
   const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   
-  // Email OTP Form States
-  const [otpEmail, setOtpEmail] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [otpStep, setOtpStep] = useState<'email' | 'verify'>('email');
-  const [otpMode, setOtpMode] = useState<'login' | 'register'>('login');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpResendCooldown, setOtpResendCooldown] = useState(0);
+  // Registration Password
+  const [regPassword, setRegPassword] = useState('');
+  
+  // Forgot Password States
+  const [forgotStep, setForgotStep] = useState<1 | 2>(1);
+  const [forgotIdentifier, setForgotIdentifier] = useState('');
   
   // UI Status
   const [error, setError] = useState('');
@@ -612,17 +612,23 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     }
 
     try {
-      const newUser = await registerUser({
-        name,
-        dob,
-        email,
-        phone,
-        pincode,
-        city,
-        district,
-        state,
-        nation
-      });
+        if (!regPassword || regPassword.length < 8) {
+          setError('Password must be at least 8 characters long.');
+          setIsLoading(false);
+          return;
+        }
+        const newUser = await registerUserWithPassword({
+          name,
+          dob,
+          email,
+          phone,
+          pincode,
+          city,
+          district,
+          state,
+          nation,
+          password: regPassword
+        });
       setCurrentUser(newUser);
       setActiveTab('dashboard');
       setView('id-card');
@@ -669,8 +675,14 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
       return;
     }
 
+    if (!loginPassword) {
+      setError('Please enter your password.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const user = await loginUser(loginIdentifier);
+      const user = await loginWithPassword(loginIdentifier, loginPassword);
       setCurrentUser(user);
       setView('id-card');
       setSuccess('Consciousness aligned. Welcome back, Guardian.');
@@ -678,6 +690,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
       setTimeout(() => {
         setActiveTab('dashboard');
         setLoginIdentifier('');
+        setLoginPassword('');
       }, 1200);
     } catch (err: any) {
       setError(err.message || 'Alignment failed. Check your credential or register.');
@@ -691,6 +704,31 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     setCurrentUser(null);
     setActiveTab('register');
     onAuthChange?.(null);
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+
+    if (!forgotIdentifier.trim()) {
+      setError('Please enter your email or Universal ID.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      await requestPasswordReset(forgotIdentifier.trim().toLowerCase());
+      setForgotStep(2);
+      setSuccess('If an account exists, a password reset link has been sent.');
+    } catch (err: any) {
+      // For security, always show success even if user doesn't exist
+      setForgotStep(2);
+      setSuccess('If an account exists, a password reset link has been sent.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const copyId = () => {
@@ -729,143 +767,6 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     }
   };
 
-  // Email OTP Handlers
-  const handleOtpEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setIsLoading(true);
-
-    if (!otpEmail) {
-      setError('Please enter your email address.');
-      setIsLoading(false);
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(otpEmail)) {
-      setError('Please enter a valid email address.');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      if (otpMode === 'login') {
-        await sendEmailOtp(otpEmail);
-      } else {
-        await sendRegistrationEmailOtp(otpEmail);
-      }
-      setOtpStep('verify');
-      setOtpSent(true);
-      setOtpResendCooldown(60);
-      setSuccess(`6-digit code sent to ${otpEmail}. Check your inbox (and spam folder).`);
-      
-      // Start cooldown timer
-      const cooldownInterval = setInterval(() => {
-        setOtpResendCooldown(prev => {
-          if (prev <= 1) {
-            clearInterval(cooldownInterval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOtpVerifySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setIsLoading(true);
-
-    if (!otpCode || otpCode.length !== 6) {
-      setError('Please enter the 6-digit code.');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      let user: UniversalIdRecord;
-      
-      if (otpMode === 'login') {
-        user = await verifyEmailOtp(otpEmail, otpCode);
-      } else {
-        try {
-          user = await verifyRegistrationEmailOtp(otpEmail, otpCode);
-        } catch (regErr: any) {
-          if (regErr.message === 'REGISTRATION_REQUIRED') {
-            // User authenticated but needs to complete profile registration
-            setError('Email verified! Please complete your registration to get your Universal ID.');
-            setActiveTab('register');
-            setEmail(otpEmail);
-            setIsLoading(false);
-            return;
-          }
-          throw regErr;
-        }
-      }
-      
-      setCurrentUser(user);
-      setActiveTab('dashboard');
-      setView('id-card');
-      setSuccess('Consciousness aligned. Welcome to the collective.');
-      onAuthChange?.(user);
-      
-      // Reset OTP state
-      setOtpStep('email');
-      setOtpCode('');
-      setOtpEmail('');
-      setOtpSent(false);
-      
-      setTimeout(() => {
-        setActiveTab('dashboard');
-      }, 1200);
-    } catch (err: any) {
-      if (err.message.includes('expired') || err.message.includes('invalid')) {
-        setError('Invalid or expired code. Please request a new one.');
-      } else {
-        setError(err.message || 'Verification failed. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    setError('');
-    setSuccess('');
-    setIsLoading(true);
-
-    try {
-      if (otpMode === 'login') {
-        await sendEmailOtp(otpEmail);
-      } else {
-        await sendRegistrationEmailOtp(otpEmail);
-      }
-      setOtpResendCooldown(60);
-      setSuccess(`New code sent to ${otpEmail}.`);
-      
-      const cooldownInterval = setInterval(() => {
-        setOtpResendCooldown(prev => {
-          if (prev <= 1) {
-            clearInterval(cooldownInterval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend code. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const renderContent = () => (
     <>
       {(isLoading || isInitializing) && !currentUser ? (
@@ -878,7 +779,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
           {/* Form Navigation Tabs */}
           {activeTab !== 'dashboard' && (
             <div className="space-y-6" role="tablist" aria-label="Authentication methods">
-              <div className="flex bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/80 max-w-xs" role="group">
+              <div className="flex bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/80 max-w-sm" role="group">
                 <button
                   onClick={() => { setActiveTab('register'); setError(''); }}
                   disabled={isLoading}
@@ -891,7 +792,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                   }`}
                 >
                   <UserPlus className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
-                  Claim ID
+                  Register
                 </button>
                 <button
                   onClick={() => { setActiveTab('login'); setError(''); }}
@@ -905,21 +806,21 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                   }`}
                 >
                   <LogIn className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
-                  Enter Identity
+                  Login
                 </button>
                 <button
-                  onClick={() => { setActiveTab('email-otp'); setError(''); setOtpStep('email'); setOtpMode('login'); setOtpEmail(''); setOtpCode(''); }}
+                  onClick={() => { setActiveTab('forgot'); setError(''); }}
                   disabled={isLoading}
                   role="tab"
-                  aria-selected={activeTab === 'email-otp'}
-                  aria-controls="email-otp-panel"
-                  id="email-otp-tab"
+                  aria-selected={activeTab === 'forgot'}
+                  aria-controls="forgot-panel"
+                  id="forgot-tab"
                   className={`flex-1 py-2.5 text-xs font-medium tracking-wide rounded-lg transition-all duration-300 ${
-                    activeTab === 'email-otp' ? 'bg-zinc-850 text-white shadow' : 'text-zinc-400 hover:text-white'
+                    activeTab === 'forgot' ? 'bg-zinc-850 text-white shadow' : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  <Mail className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
-                  Email OTP
+                  <RotateCcw className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
+                  Forgot
                 </button>
               </div>
 
@@ -1026,6 +927,24 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                         />
                       </div>
                     </div>
+
+                    <div>
+                      <label htmlFor="reg-password" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-semibold font-mono">Password</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-zinc-500" aria-hidden="true"><Lock className="w-4 h-4" /></span>
+                        <input 
+                          id="reg-password"
+                          type="password" 
+                          required
+                          disabled={isLoading}
+                          autoComplete="new-password"
+                          placeholder="Min 8 characters"
+                          value={regPassword}
+                          onChange={(e) => setRegPassword(e.target.value)}
+                          className="w-full pl-9 pr-4 py-2.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs font-light transition-all outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                     {/* Geographic details - Improved mobile layout */}
@@ -1125,113 +1044,85 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                     <span>Generate My Sovereign ID</span>
                   </button>
                 </form>
-              ) : activeTab === 'email-otp' ? (
-                /* EMAIL OTP FORM */
-                <div id="email-otp-panel" role="tabpanel" aria-labelledby="email-otp-tab" className="space-y-6 pt-4">
-                  {otpStep === 'email' ? (
-                    <form onSubmit={handleOtpEmailSubmit} className="space-y-6">
-                      <div>
-                        <label htmlFor="otp-email" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-2 font-semibold font-mono">Enter Your Registered Email</label>
-                        <div className="relative">
-                          <span className="absolute left-3.5 top-3.5 text-zinc-500" aria-hidden="true"><Mail className="w-4 h-4" /></span>
-                          <input 
-                            ref={firstInputRef}
-                            id="otp-email"
-                            type="email" 
-                            required
-                            disabled={isLoading}
-                            autoComplete="email"
-                            placeholder="e.g. guardian@universe.trust"
-                            value={otpEmail}
-                            onChange={(e) => setOtpEmail(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs sm:text-sm font-light transition-all outline-none"
-                          />
+              ) : activeTab === 'forgot' ? (
+                /* FORGOT PASSWORD FORM */
+                <form onSubmit={handleForgotPassword} id="forgot-panel" role="tabpanel" aria-labelledby="forgot-tab" className="space-y-6 pt-4">
+                  {forgotStep === 1 ? (
+                    <>
+                      <div className="text-center mb-6">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-4">
+                          <Mail className="w-8 h-8 text-indigo-400" aria-hidden="true" />
                         </div>
+                        <h3 className="text-xl font-light text-white mb-2">Reset Your Password</h3>
+                        <p className="text-zinc-400 text-xs">Enter your email or Universal ID and we'll send you a reset link.</p>
                       </div>
-
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => { setOtpMode('login'); handleOtpEmailSubmit(new Event('submit') as unknown as React.FormEvent); }}
-                          disabled={isLoading}
-                          className="flex-1 bg-white text-zinc-950 hover:bg-zinc-100 font-medium py-3.5 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
-                        >
-                          {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> : <>Sign In with OTP</>}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setOtpMode('register'); handleOtpEmailSubmit(new Event('submit') as unknown as React.FormEvent); }}
-                          disabled={isLoading}
-                          className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3.5 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
-                        >
-                          {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <>Register with OTP</>}
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <form onSubmit={handleOtpVerifySubmit} className="space-y-6">
-                      <div className="text-center">
-                        <Mail className="w-10 h-10 text-indigo-400 mx-auto mb-3" aria-hidden="true" />
-                        <p className="text-zinc-400 text-xs mb-1">We've sent a 6-digit code to</p>
-                        <p className="text-white font-mono text-sm">{otpEmail}</p>
-                      </div>
-
+                      
                       <div>
-                        <label htmlFor="otp-code" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-2 font-semibold font-mono">Enter 6-Digit Code</label>
+                        <label htmlFor="forgot-identifier" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-2 font-semibold font-mono">Email or Universal ID</label>
                         <div className="relative">
-                          <span className="absolute left-3.5 top-3.5 text-zinc-500" aria-hidden="true"><Lock className="w-4 h-4" /></span>
+                          <span className="absolute left-3.5 top-3.5 text-zinc-500" aria-hidden="true"><Globe className="w-4 h-4" /></span>
                           <input 
                             ref={firstInputRef}
-                            id="otp-code"
+                            id="forgot-identifier"
                             type="text" 
                             required
                             disabled={isLoading}
-                            autoComplete="one-time-code"
-                            inputMode="numeric"
-                            maxLength={6}
-                            placeholder="000000"
-                            value={otpCode}
-                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                            className="w-full pl-10 pr-4 py-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs sm:text-sm font-light transition-all outline-none text-center tracking-widest font-mono"
+                            autoComplete="username"
+                            placeholder="e.g. tesla@universe.trust or UGT-000001"
+                            value={forgotIdentifier}
+                            onChange={(e) => setForgotIdentifier(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs sm:text-sm font-light transition-all outline-none"
                           />
                         </div>
                       </div>
 
                       <button
                         type="submit"
-                        disabled={isLoading || otpCode.length !== 6}
-                        className="w-full bg-white text-zinc-950 hover:bg-zinc-100 font-medium py-3.5 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
+                        disabled={isLoading}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3.5 rounded-xl transition-all duration-300 text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2"
                       >
                         {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <>
-                            <span>Verify & {otpMode === 'login' ? 'Sign In' : 'Complete Registration'}</span>
+                            <span>Send Reset Link</span>
                             <ChevronRight className="w-4 h-4" />
                           </>
                         )}
                       </button>
-
-                      <div className="flex items-center justify-between text-xs">
+                    </>
+                  ) : forgotStep === 2 ? (
+                    <>
+                      <div className="text-center mb-6">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
+                          <CheckCircle className="w-8 h-8 text-emerald-400" aria-hidden="true" />
+                        </div>
+                        <h3 className="text-xl font-light text-white mb-2">Check Your Email</h3>
+                        <p className="text-zinc-400 text-xs">We've sent a password reset link to <span className="text-indigo-400">{forgotIdentifier}</span></p>
+                        <p className="text-zinc-500 text-[10px] mt-2">The link will expire in 1 hour.</p>
+                      </div>
+                      
+                      <div className="space-y-3">
                         <button
                           type="button"
-                          onClick={() => { setOtpStep('email'); setOtpCode(''); setError(''); setSuccess(''); }}
-                          className="text-zinc-400 hover:text-indigo-400 transition-colors"
+                          onClick={() => setForgotStep(1)}
+                          className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium py-3 rounded-xl transition-all duration-300 text-xs tracking-wide flex items-center justify-center gap-2"
                         >
-                          ← Change Email
+                          <Mail className="w-4 h-4" />
+                          <span>Resend Email</span>
                         </button>
+                        
                         <button
                           type="button"
-                          onClick={handleResendOtp}
-                          disabled={isLoading || otpResendCooldown > 0}
-                          className="text-zinc-400 hover:text-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => { setActiveTab('login'); setForgotStep(1); setForgotIdentifier(''); }}
+                          className="w-full text-zinc-400 hover:text-white font-medium py-2 text-xs transition-colors"
                         >
-                          {otpResendCooldown > 0 ? `Resend in ${otpResendCooldown}s` : 'Resend Code'}
+                          ← Back to Login
                         </button>
                       </div>
-                    </form>
-                  )}
-                </div>
+                    </>
+                  ) : null}
+                </form>
               ) : (
                 /* LOGIN FORM */
                 <form onSubmit={handleLogin} id="login-panel" role="tabpanel" aria-labelledby="login-tab" className="space-y-6 pt-4">
@@ -1252,6 +1143,38 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                         className="w-full pl-10 pr-4 py-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs sm:text-sm font-light transition-all outline-none"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="login-password" className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-2 font-semibold font-mono">Password</label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-3.5 text-zinc-500" aria-hidden="true"><Lock className="w-4 h-4" /></span>
+                      <input 
+                        id="login-password"
+                        type="password" 
+                        required
+                        disabled={isLoading}
+                        autoComplete="current-password"
+                        placeholder="Enter your password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3.5 bg-zinc-950/60 border border-zinc-800 rounded-xl focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 text-white text-xs sm:text-sm font-light transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Forgot Password Link */}
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Navigate to password reset page
+                        window.location.href = '/password-reset';
+                      }}
+                      className="text-xs text-indigo-400 hover:text-indigo-300 hover:underline font-medium transition-colors"
+                    >
+                      Forgot Password?
+                    </button>
                   </div>
 
                   <button
