@@ -247,7 +247,7 @@ export async function requestPasswordReset(
   email: string,
   redirectUrl?: string
 ): Promise<PasswordResetRequestResponse> {
-  return apiRequest<PasswordResetRequestResponse>('/auth/forgot-password', {
+  return apiRequest<PasswordResetRequestResponse>('/auth/password/reset-request', {
     method: 'POST',
     body: JSON.stringify({ email, redirect_url: redirectUrl }),
   });
@@ -263,8 +263,8 @@ export async function confirmPasswordReset(
   token: string,
   password: string
 ): Promise<PasswordResetConfirmResponse> {
-  return apiRequest<PasswordResetConfirmResponse>('/auth/reset-password', {
+  return apiRequest<PasswordResetConfirmResponse>('/auth/password/reset-confirm', {
     method: 'POST',
-    body: JSON.stringify({ token, new_password: password }),
+    body: JSON.stringify({ token, password }),
   });
 }
