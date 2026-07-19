@@ -11,6 +11,8 @@
     "start:api": "node server/index.js"
   },
   "dependencies": {
+    "@sentry/browser": "^10.66.0",
+    "@sentry/react": "^10.66.0",
     "@supabase/supabase-js": "^2.110.1",
     "@types/jsonwebtoken": "^9.0.10",
     "cors": "^2.8.5",

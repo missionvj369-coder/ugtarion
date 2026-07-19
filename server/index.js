@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import { SignJWT, jwtVerify, importPKCS8, importSPKI, generateKeyPair, exportPKCS8, exportSPKI } from 'jose';
 import { randomBytes, createHash } from 'crypto';
 
-// Import shared API core
+// Import shared API Core
 import {
   handleGetCount,
   handleGetProfile,
@@ -15,6 +15,27 @@ import {
   handleLogin,
   createSupabaseAdmin,
 } from '../lib/api-core.ts';
+
+// ============================================
+// SECURITY: Environment Validation
+// ============================================
+
+// Validate required environment variables in production
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction) {
+  const requiredEnvVars = [
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'BREVO_API_KEY',
+  ];
+  
+  const missing = requiredEnvVars.filter(v => !process.env[v]);
+  if (missing.length > 0) {
+    console.error(`FATAL: Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
 
 // Brevo Email Configuration
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
@@ -143,18 +164,112 @@ const PLATFORM_REDIRECT_URI = process.env.PLATFORM_REDIRECT_URI || 'https://univ
 const supabase = createSupabaseAdmin();
 
 const app = express();
-app.use(helmet());
-app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }));
+
+// ============================================
+// SECURITY: Enhanced Helmet Configuration
+// ============================================
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://aistudiocdn.com', 'https://cdn.tailwindcss.com'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.tailwindcss.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+      connectSrc: ["'self'", 'https://aistudiocdn.com', 'https://api.qrserver.com', 'https://*.supabase.co'],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: isProduction ? [] : null,
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  },
+  frameguard: {
+    action: 'deny',
+  },
+  noSniff: true,
+  xssFilter: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
+
+// ============================================
+// SECURITY: Dynamic CORS Configuration
+// ============================================
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000,https://universal-guard-trust.netlify.app')
+  .split(',')
+  .map(o => o.trim());
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // In development, allow all origins
+    if (!isProduction) return callback(null, true);
+    
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token'],
+  exposedHeaders: ['X-Request-Id', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+  maxAge: 86400, // 24 hours
+}));
+
 app.use(express.json({ limit: '10kb' }));
 
-// Basic rate limiting for public endpoints
-const limiter = rateLimit({
+// ============================================
+// SECURITY: Rate Limiting Configuration
+// ============================================
+
+// Global rate limiter
+const globalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 60, // limit each IP to 60 requests per windowMs
+  max: 100, // limit each IP to 100 requests per minute
   standardHeaders: true,
   legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+  skip: (req) => req.path === '/health',
 });
-app.use(limiter);
+app.use(globalLimiter);
+
+// Strict rate limiter for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 auth attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts, please try again later.' },
+  keyGenerator: (req) => {
+    // Use IP + identifier for more granular limiting
+    return `${req.ip}-${req.body?.email || req.body?.identifier || 'unknown'}`;
+  },
+});
+
+// Password reset rate limiter
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // limit each IP to 3 password reset requests per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many password reset attempts, please try again later.' },
+});
+
+// Registration rate limiter
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // limit each IP to 5 registrations per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts, please try again later.' },
+});
 
 // ============================================
 // Crypto Utilities
@@ -455,6 +570,47 @@ function corsHeaders(origin) {
 // ============================================
 // Auth Endpoints
 // ============================================
+
+// CSRF Token Generation and Validation
+const csrfTokens = new Map();
+
+function generateCsrfToken() {
+  return randomBytes(32).toString('hex');
+}
+
+function validateCsrfToken(token, storedToken) {
+  if (!token || !storedToken) return false;
+  return timingSafeEqual(token, storedToken);
+}
+
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+// CSRF protection middleware
+const csrfProtection = (req, res, next) => {
+  // Skip for GET requests (read-only)
+  if (req.method === 'GET') return next();
+  
+  // Skip for same-origin requests
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) return next();
+  
+  // Check CSRF token for other origins
+  const csrfToken = req.headers['x-csrf-token'] || req.body?._csrf;
+  const storedToken = req.session?.csrfToken || csrfTokens.get(req.ip);
+  
+  if (!validateCsrfToken(csrfToken, storedToken)) {
+    return res.status(403).json({ error: 'csrf_invalid', error_description: 'Invalid CSRF token' });
+  }
+  
+  next();
+};
 
 // OAuth Authorization Endpoint
 app.get('/auth/authorize', async (req, res) => {
@@ -1017,11 +1173,29 @@ app.post('/auth/password/reset-confirm', async (req, res) => {
 });
 
 // ============================================
+// Password Hashing Utility
+// ============================================
+
+async function hashPassword(password) {
+  // Use SHA-256 with salt for password hashing
+  // In production, use bcrypt or argon2
+  const salt = randomBytes(16).toString('hex');
+  const hash = createHash('sha256').update(password + salt).digest('hex');
+  return `${salt}:${hash}`;
+}
+
+async function verifyPassword(password, storedHash) {
+  const [salt, hash] = storedHash.split(':');
+  const verifyHash = createHash('sha256').update(password + salt).digest('hex');
+  return hash === verifyHash;
+}
+
+// ============================================
 // Password Login Endpoint
 // ============================================
 
 // POST /api/login - Password-based login
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authLimiter, async (req, res) => {
   const result = await handleLogin(supabase, req.body);
   if (result.error) {
     const status = result.error.includes('not found') ? 404 : 500;
@@ -1034,9 +1208,24 @@ app.post('/api/login', async (req, res) => {
 // Original API Routes
 // ============================================
 
-// Health check
+// Health check - no rate limiting, no auth required
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+  });
+});
+
+// Readiness check - verifies database connectivity
+app.get('/ready', async (req, res) => {
+  try {
+    const { error } = await supabase.from('profiles').select('id').limit(1);
+    if (error) throw error;
+    res.json({ status: 'ready', timestamp: new Date().toISOString() });
+  } catch (e) {
+    res.status(503).json({ status: 'not_ready', error: e.message });
+  }
 });
 
 // GET /api/count
@@ -1058,7 +1247,7 @@ app.get('/api/profile/:uid', async (req, res) => {
 });
 
 // POST /api/register
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', registerLimiter, async (req, res) => {
   const result = await handleRegister(supabase, req.body);
   if (result.error) {
     const status = result.error.includes('already associated') || result.error.includes('phone number is already registered') ? 409 : 500;
