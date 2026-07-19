@@ -1,247 +1,210 @@
 /**
- * Full Auth Flow Test Script
- * Tests: Register → Login → Password Reset → Reset Password
- * 
- * Usage: node scripts/full-auth-flow-test.mjs
+ * Full Authentication Flow Test
+ * Tests: Register -> Login -> Password Change -> Login with New Password
  */
 
-import https from 'https';
-import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
-// Configuration
-const CONFIG = {
-  supabaseUrl: 'https://mgrdamgdpnbtxgxdxwbs.supabase.co',
-  apiBaseUrl: 'http://localhost:4000',
-  testEmail: `test_${Date.now()}@test.com`,
-  testPassword: 'Test@123456',
-  testName: 'Test User',
-  testPhone: '9876543210',
-  testDob: '1990-01-15',
-  testPincode: '110001',
-  testCity: 'New Delhi',
-  testDistrict: 'Delhi',
-  testState: 'Delhi',
-  testNation: 'India'
-};
+// Configuration - Update these values
+const SUPABASE_URL = process.env.SUPABASE_URL || 'YOUR_SUPABASE_URL';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
-// Helper function to make HTTP requests
-function httpRequest(url, options = {}) {
-  return new Promise((resolve, reject) => {
-    const urlObj = new URL(url);
-    const reqOptions = {
-      hostname: urlObj.hostname,
-      port: urlObj.port,
-      path: urlObj.pathname + urlObj.search,
-      method: options.method || 'GET',
-      headers: options.headers || {}
-    };
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    const req = https.request(reqOptions, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve({ status: res.statusCode, data: JSON.parse(data) });
-        } catch {
-          resolve({ status: res.statusCode, data });
-        }
-      });
-    });
+const TEST_EMAIL = `ugt_test_${Date.now()}@gmail.com`;
+const TEST_PASSWORD = 'TestPassword123!';
+const NEW_PASSWORD = 'NewPassword456!';
 
-    req.on('error', reject);
-    if (options.body) req.write(options.body);
-    req.end();
-  });
-}
-
-// Helper to call local API
-async function apiCall(endpoint, method = 'POST', body = null) {
-  const url = `${CONFIG.apiBaseUrl}${endpoint}`;
-  const options = {
-    method,
-    headers: { 'Content-Type': 'application/json' }
-  };
-  if (body) options.body = JSON.stringify(body);
-  return httpRequest(url, options);
-}
-
-// Test 1: Register User
 async function testRegister() {
-  console.log('\n📝 TEST 1: Register User');
-  console.log('='.repeat(50));
-  
+  console.log('\n=== TEST 1: Register ===');
   try {
-    const response = await apiCall('/api/register', 'POST', {
-      name: CONFIG.testName,
-      dob: CONFIG.testDob,
-      email: CONFIG.testEmail,
-      phone: CONFIG.testPhone,
-      pincode: CONFIG.testPincode,
-      city: CONFIG.testCity,
-      district: CONFIG.testDistrict,
-      state: CONFIG.testState,
-      nation: CONFIG.testNation
+    // Register via Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
+      email: TEST_EMAIL,
+      password: TEST_PASSWORD,
     });
 
-    console.log('Status:', response.status);
-    console.log('Response:', JSON.stringify(response.data, null, 2));
-
-    if (response.status === 200 || response.status === 201) {
-      console.log('✅ Registration successful!');
-      return { success: true, data: response.data };
-    } else {
-      console.log('❌ Registration failed!');
-      return { success: false, error: response.data };
+    if (error) {
+      console.log('Register Error:', error.message);
+      return { success: false, error: error.message };
     }
-  } catch (error) {
-    console.log('❌ Error:', error.message);
-    return { success: false, error: error.message };
+
+    console.log('✓ Registration successful');
+    console.log('  User ID:', data.user?.id);
+    console.log('  Email:', data.user?.email);
+    return { success: true, user: data.user };
+  } catch (e) {
+    console.log('✗ Registration failed:', e.message);
+    return { success: false, error: e.message };
   }
 }
 
-// Test 2: Login User
-async function testLogin() {
-  console.log('\n🔐 TEST 2: Login User');
-  console.log('='.repeat(50));
-  
+async function testLogin(email, password) {
+  console.log('\n=== TEST 2: Login ===');
   try {
-    const response = await apiCall('/api/login', 'POST', {
-      identifier: CONFIG.testEmail,
-      password: CONFIG.testPassword
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
-    console.log('Status:', response.status);
-    console.log('Response:', JSON.stringify(response.data, null, 2));
-
-    if (response.status === 200) {
-      console.log('✅ Login successful!');
-      return { success: true, data: response.data };
-    } else {
-      console.log('❌ Login failed!');
-      return { success: false, error: response.data };
+    if (error) {
+      console.log('Login Error:', error.message);
+      return { success: false, error: error.message };
     }
-  } catch (error) {
-    console.log('❌ Error:', error.message);
-    return { success: false, error: error.message };
+
+    console.log('✓ Login successful');
+    console.log('  User ID:', data.user?.id);
+    console.log('  Session:', data.session ? 'Active' : 'None');
+    return { success: true, session: data.session };
+  } catch (e) {
+    console.log('✗ Login failed:', e.message);
+    return { success: false, error: e.message };
   }
 }
 
-// Test 3: Request Password Reset
-async function testPasswordResetRequest() {
-  console.log('\n🔑 TEST 3: Request Password Reset');
-  console.log('='.repeat(50));
-  
+async function testPasswordChange(email, currentPassword, newPassword) {
+  console.log('\n=== TEST 3: Password Change ===');
   try {
-    const response = await apiCall('/api/password-reset/request', 'POST', {
-      email: CONFIG.testEmail
+    // First login to get valid session
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password: currentPassword,
     });
 
-    console.log('Status:', response.status);
-    console.log('Response:', JSON.stringify(response.data, null, 2));
-
-    if (response.status === 200) {
-      console.log('✅ Password reset email request successful!');
-      console.log('📧 Check email for reset link');
-      return { success: true, data: response.data };
-    } else {
-      console.log('❌ Password reset request failed!');
-      return { success: false, error: response.data };
+    if (loginError) {
+      console.log('Login before password change failed:', loginError.message);
+      return { success: false, error: loginError.message };
     }
-  } catch (error) {
-    console.log('❌ Error:', error.message);
-    return { success: false, error: error.message };
+
+    // Update password
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      console.log('Password Change Error:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✓ Password changed successfully');
+    console.log('  User ID:', data.user?.id);
+    return { success: true };
+  } catch (e) {
+    console.log('✗ Password change failed:', e.message);
+    return { success: false, error: e.message };
   }
 }
 
-// Test 4: Confirm Password Reset
-async function testPasswordResetConfirm(token, newPassword) {
-  console.log('\n🔄 TEST 4: Confirm Password Reset');
-  console.log('='.repeat(50));
-  
+async function testLoginWithNewPassword(email, newPassword) {
+  console.log('\n=== TEST 4: Login with New Password ===');
   try {
-    const response = await apiCall('/api/password-reset/confirm', 'POST', {
-      token: token,
-      newPassword: newPassword
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: newPassword,
     });
 
-    console.log('Status:', response.status);
-    console.log('Response:', JSON.stringify(response.data, null, 2));
-
-    if (response.status === 200) {
-      console.log('✅ Password reset successful!');
-      return { success: true, data: response.data };
-    } else {
-      console.log('❌ Password reset failed!');
-      return { success: false, error: response.data };
+    if (error) {
+      console.log('Login Error:', error.message);
+      return { success: false, error: error.message };
     }
-  } catch (error) {
-    console.log('❌ Error:', error.message);
-    return { success: false, error: error.message };
+
+    console.log('✓ Login with new password successful');
+    console.log('  User ID:', data.user?.id);
+    return { success: true };
+  } catch (e) {
+    console.log('✗ Login with new password failed:', e.message);
+    return { success: false, error: e.message };
   }
 }
 
-// Main test runner
+async function testOldPasswordShouldFail(email, oldPassword) {
+  console.log('\n=== TEST 5: Old Password Should Fail ===');
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: oldPassword,
+    });
+
+    if (error) {
+      console.log('✓ Old password correctly rejected');
+      console.log('  Error:', error.message);
+      return { success: true };
+    }
+
+    console.log('✗ Old password should have been rejected!');
+    return { success: false };
+  } catch (e) {
+    console.log('✓ Old password correctly rejected:', e.message);
+    return { success: true };
+  }
+}
+
 async function runFullTest() {
-  console.log('🚀 Universal Guard Trust - Full Auth Flow Test');
-  console.log('='.repeat(60));
-  console.log(`Test Email: ${CONFIG.testEmail}`);
-  console.log(`Test Password: ${CONFIG.testPassword}`);
-  console.log('='.repeat(60));
-
-  const results = {
-    register: null,
-    login: null,
-    passwordResetRequest: null,
-    passwordResetConfirm: null
-  };
+  console.log('╔════════════════════════════════════════════════════════════╗');
+  console.log('║     FULL AUTHENTICATION FLOW TEST                         ║');
+  console.log('╚════════════════════════════════════════════════════════════╝');
+  console.log('\nTest Email:', TEST_EMAIL);
+  console.log('Test Password:', TEST_PASSWORD);
+  console.log('New Password:', NEW_PASSWORD);
 
   // Test 1: Register
-  results.register = await testRegister();
-  
-  // Test 2: Login (with initial password)
-  if (results.register.success) {
-    results.login = await testLogin();
-  } else {
-    console.log('\n⚠️ Skipping login test - registration failed');
+  const registerResult = await testRegister();
+  if (!registerResult.success) {
+    console.log('\n⚠️  Registration failed, but continuing with other tests...');
   }
 
-  // Test 3: Password Reset Request
-  if (results.register.success) {
-    results.passwordResetRequest = await testPasswordResetRequest();
+  // Small delay to ensure user is created
+  await new Promise(r => setTimeout(r, 1000));
+
+  // Test 2: Login with original password
+  const loginResult = await testLogin(TEST_EMAIL, TEST_PASSWORD);
+  if (!loginResult.success) {
+    console.log('\n⚠️  Login failed. Check if email verification is required.');
+    console.log('   You may need to either:');
+    console.log('   1. Disable email confirmation in Supabase');
+    console.log('   2. Or manually confirm the user in Supabase dashboard');
   }
 
-  // Test 4: Password Reset Confirm (requires token from email)
-  // Note: In real test, you would extract token from email
-  // For automated testing, you may need to check database for token
-  if (results.passwordResetRequest?.success) {
-    console.log('\n⚠️ Password reset token sent to email');
-    console.log('📧 Please check email and run password reset confirm test manually');
-    console.log('   Or check password_reset_tokens table for the token');
+  // Test 3: Password Change
+  const passwordChangeResult = await testPasswordChange(TEST_EMAIL, TEST_PASSWORD, NEW_PASSWORD);
+  if (!passwordChangeResult.success) {
+    console.log('\n⚠️  Password change failed.');
   }
+
+  // Test 4: Login with new password
+  const newLoginResult = await testLoginWithNewPassword(TEST_EMAIL, NEW_PASSWORD);
+  if (!newLoginResult.success) {
+    console.log('\n⚠️  Login with new password failed.');
+  }
+
+  // Test 5: Old password should fail
+  const oldPasswordResult = await testOldPasswordShouldFail(TEST_EMAIL, TEST_PASSWORD);
 
   // Summary
-  console.log('\n' + '='.repeat(60));
-  console.log('📊 TEST SUMMARY');
-  console.log('='.repeat(60));
-  console.log('1. Registration:', results.register?.success ? '✅ PASS' : '❌ FAIL');
-  console.log('2. Login:', results.login?.success ? '✅ PASS' : '❌ FAIL');
-  console.log('3. Password Reset Request:', results.passwordResetRequest?.success ? '✅ PASS' : '❌ FAIL');
-  console.log('4. Password Reset Confirm: ⏳ PENDING (needs token from email)');
-  console.log('='.repeat(60));
+  console.log('\n╔════════════════════════════════════════════════════════════╗');
+  console.log('║                    TEST SUMMARY                           ║');
+  console.log('╚════════════════════════════════════════════════════════════╝');
+  console.log('  Register:              ', registerResult.success ? '✓ PASS' : '✗ FAIL');
+  console.log('  Login (original):       ', loginResult.success ? '✓ PASS' : '✗ FAIL');
+  console.log('  Password Change:       ', passwordChangeResult.success ? '✓ PASS' : '✗ FAIL');
+  console.log('  Login (new password):  ', newLoginResult.success ? '✓ PASS' : '✗ FAIL');
+  console.log('  Old password rejected: ', oldPasswordResult.success ? '✓ PASS' : '✗ FAIL');
 
-  const allPassed = results.register?.success && 
-                    results.login?.success && 
-                    results.passwordResetRequest?.success;
+  const allPassed = registerResult.success && loginResult.success && 
+                    passwordChangeResult.success && newLoginResult.success && 
+                    oldPasswordResult.success;
   
-  if (allPassed) {
-    console.log('\n🎉 Core auth flows are working!');
-    console.log('📧 Check email for password reset link to complete full test\n');
-  } else {
-    console.log('\n⚠️ Some tests failed. Please review the output above.\n');
-  }
-
-  return results;
+  console.log('\n' + (allPassed ? '🎉 ALL TESTS PASSED!' : '⚠️  SOME TESTS FAILED'));
+  
+  return allPassed;
 }
 
 // Run the test
-runFullTest().catch(console.error);
+runFullTest()
+  .then(success => {
+    process.exit(success ? 0 : 1);
+  })
+  .catch(e => {
+    console.error('Test runner error:', e);
+    process.exit(1);
+  });
