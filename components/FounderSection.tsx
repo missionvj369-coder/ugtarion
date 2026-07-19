@@ -16,7 +16,7 @@ const FounderSection: React.FC = () => {
             <img 
               src={architectProfile} 
               alt="Founder & Cosmic Architect of Universal Guard Trust" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover grayscale"
               referrerPolicy="no-referrer"
             />
           </div>

@@ -1456,8 +1456,8 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
 
   // Inline section mode
   return (
-    <SectionWrapper id="registry-portal">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+    <SectionWrapper id="registry-portal" className="min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 lg:py-12">
         {/* Title */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
           <span className="text-xs uppercase tracking-widest text-zinc-400 font-mono font-medium block mb-3">Real-Time Registry</span>

@@ -24,7 +24,7 @@ const CoFounderSection: React.FC = () => {
             <img 
               src={frameworkBuilderProfile} 
               alt="Co-Founder & Framework Builder of Universal Guard Trust" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover grayscale"
               referrerPolicy="no-referrer"
             />
           </div>
