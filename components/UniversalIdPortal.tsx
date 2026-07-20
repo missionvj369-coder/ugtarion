@@ -779,7 +779,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
           {/* Form Navigation Tabs */}
           {activeTab !== 'dashboard' && (
             <div className="space-y-6" role="tablist" aria-label="Authentication methods">
-              <div className="flex bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/80 max-w-sm" role="group">
+              <div className="flex bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/80 max-w-sm mx-auto" role="group">
                 <button
                   onClick={() => { setActiveTab('register'); setError(''); setSuccess(''); }}
                   disabled={isLoading}
@@ -787,12 +787,13 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                   aria-selected={activeTab === 'register'}
                   aria-controls="register-panel"
                   id="register-tab"
-                  className={`flex-1 py-2.5 text-xs font-medium tracking-wide rounded-lg transition-all duration-300 ${
+                  className={`flex-1 py-2.5 px-1 sm:px-3 text-[10px] sm:text-xs font-medium tracking-wide rounded-lg transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'register' ? 'bg-zinc-850 text-white shadow' : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  <UserPlus className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
-                  Register
+                  <UserPlus className="w-3.5 h-3.5 inline-block mr-1" aria-hidden="true" />
+                  <span className="hidden sm:inline">Register</span>
+                  <span className="sm:hidden">Reg</span>
                 </button>
                 <button
                   onClick={() => { setActiveTab('login'); setError(''); setSuccess(''); }}
@@ -801,12 +802,12 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                   aria-selected={activeTab === 'login'}
                   aria-controls="login-panel"
                   id="login-tab"
-                  className={`flex-1 py-2.5 text-xs font-medium tracking-wide rounded-lg transition-all duration-300 ${
+                  className={`flex-1 py-2.5 px-1 sm:px-3 text-[10px] sm:text-xs font-medium tracking-wide rounded-lg transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'login' ? 'bg-zinc-850 text-white shadow' : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  <LogIn className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
-                  Login
+                  <LogIn className="w-3.5 h-3.5 inline-block mr-1" aria-hidden="true" />
+                  <span>Login</span>
                 </button>
                 <button
                   onClick={() => { setActiveTab('forgot'); setError(''); setSuccess(''); }}
@@ -815,12 +816,13 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                   aria-selected={activeTab === 'forgot'}
                   aria-controls="forgot-panel"
                   id="forgot-tab"
-                  className={`flex-1 py-2.5 text-xs font-medium tracking-wide rounded-lg transition-all duration-300 ${
+                  className={`flex-1 py-2.5 px-1 sm:px-3 text-[10px] sm:text-xs font-medium tracking-wide rounded-lg transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'forgot' ? 'bg-zinc-850 text-white shadow' : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  <RotateCcw className="w-3.5 h-3.5 inline-block mr-1.5" aria-hidden="true" />
-                  Forgot
+                  <RotateCcw className="w-3.5 h-3.5 inline-block mr-1" aria-hidden="true" />
+                  <span className="hidden sm:inline">Forgot</span>
+                  <span className="sm:hidden">Reset</span>
                 </button>
               </div>
 

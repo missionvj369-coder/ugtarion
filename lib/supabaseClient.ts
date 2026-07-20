@@ -445,29 +445,40 @@ export const loginWithPassword = async (identifier: string, password: string): P
 
 /**
  * Request password reset (sends reset token via email/SMS)
+ * Uses the Netlify function to send the email via Brevo
  */
 export const requestPasswordReset = async (identifier: string): Promise<{ success: boolean; message: string; expiresAt: Date | null }> => {
   const cleanInput = identifier.trim().toLowerCase();
 
-  const { data: result, error } = await supabase.rpc('request_password_reset', {
-    p_identifier: cleanInput,
-  });
+  // Call the Netlify function which handles both token creation AND email sending
+  const authFunctionUrl = import.meta.env.VITE_AUTH_FUNCTION_URL || 'https://ugtglobal.space/.netlify/functions/auth';
+  
+  try {
+    const response = await fetch(`${authFunctionUrl}/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ identifier: cleanInput }),
+    });
 
-  if (error) {
-    throw new Error(error.message || 'Failed to request password reset');
-  }
+    const data = await response.json();
 
-  if (!result || result.length === 0) {
-    // Don't reveal if user exists - return success anyway
+    if (!response.ok) {
+      // For security, don't reveal if user exists - return success anyway
+      return { success: true, message: 'If an account exists, a reset link has been sent.', expiresAt: null };
+    }
+
+    return {
+      success: data.success,
+      message: data.message || 'If an account exists, a reset link has been sent.',
+      expiresAt: data.expires_at ? new Date(data.expires_at) : null,
+    };
+  } catch (error) {
+    // Network error - for security, don't reveal if user exists
+    console.error('Password reset request failed:', error);
     return { success: true, message: 'If an account exists, a reset link has been sent.', expiresAt: null };
   }
-
-  const res = result[0];
-  return {
-    success: res.success,
-    message: res.message,
-    expiresAt: res.expires_at ? new Date(res.expires_at) : null,
-  };
 };
 
 /**

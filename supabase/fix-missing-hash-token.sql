@@ -1,6 +1,9 @@
--- Fix: Add missing hash_token function for password reset
+-- Fix: Drop and recreate hash_token function with correct parameter name
 
--- Function to hash reset tokens (using pgcrypto's crypt)
+-- Drop existing function first
+DROP FUNCTION IF EXISTS public.hash_token(TEXT);
+
+-- Function to hash reset tokens using SHA256
 CREATE OR REPLACE FUNCTION public.hash_token(token TEXT)
 RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
     SELECT encode(sha256(convert_to(token, 'utf8')::bytea), 'hex');
