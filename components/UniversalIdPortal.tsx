@@ -781,7 +781,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
             <div className="space-y-6" role="tablist" aria-label="Authentication methods">
               <div className="flex bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/80 max-w-sm" role="group">
                 <button
-                  onClick={() => { setActiveTab('register'); setError(''); }}
+                  onClick={() => { setActiveTab('register'); setError(''); setSuccess(''); }}
                   disabled={isLoading}
                   role="tab"
                   aria-selected={activeTab === 'register'}
@@ -795,7 +795,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                   Register
                 </button>
                 <button
-                  onClick={() => { setActiveTab('login'); setError(''); }}
+                  onClick={() => { setActiveTab('login'); setError(''); setSuccess(''); }}
                   disabled={isLoading}
                   role="tab"
                   aria-selected={activeTab === 'login'}
@@ -809,7 +809,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                   Login
                 </button>
                 <button
-                  onClick={() => { setActiveTab('forgot'); setError(''); }}
+                  onClick={() => { setActiveTab('forgot'); setError(''); setSuccess(''); }}
                   disabled={isLoading}
                   role="tab"
                   aria-selected={activeTab === 'forgot'}
@@ -1315,7 +1315,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                     >
                       <RankDetailCard
                         label="Universe Order"
-                        rank={currentUser.universeRank}
+                        rank={currentUser.universeRank || 0}
                         location={`${totalRegistrations.toLocaleString()} guardians`}
                         icon={Globe}
                         color="text-indigo-300"
@@ -1323,40 +1323,40 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                       />
                       <RankDetailCard
                         label="In Nation"
-                        rank={currentUser.nationRank}
-                        location={currentUser.nation}
+                        rank={currentUser.nationRank || 0}
+                        location={currentUser.nation || 'N/A'}
                         icon={Flag}
                         color="text-amber-400"
                         bgColor="bg-zinc-950/70 border-zinc-800/80"
                       />
                       <RankDetailCard
                         label="In State"
-                        rank={currentUser.stateRank}
-                        location={currentUser.state}
+                        rank={currentUser.stateRank || 0}
+                        location={currentUser.state || 'N/A'}
                         icon={Building2}
                         color="text-zinc-200"
                         bgColor="bg-zinc-950/70 border-zinc-800/80"
                       />
                       <RankDetailCard
                         label="In District"
-                        rank={currentUser.districtRank}
-                        location={currentUser.district}
+                        rank={currentUser.districtRank || 0}
+                        location={currentUser.district || 'N/A'}
                         icon={Map}
                         color="text-zinc-300"
                         bgColor="bg-zinc-950/70 border-zinc-800/80"
                       />
                       <RankDetailCard
                         label="In City"
-                        rank={currentUser.cityRank}
-                        location={currentUser.city}
+                        rank={currentUser.cityRank || 0}
+                        location={currentUser.city || 'N/A'}
                         icon={Home}
                         color="text-zinc-300"
                         bgColor="bg-zinc-950/70 border-zinc-800/80"
                       />
                       <RankDetailCard
                         label="In Pincode"
-                        rank={currentUser.pincodeRank}
-                        location={currentUser.pincode}
+                        rank={currentUser.pincodeRank || 0}
+                        location={currentUser.pincode || 'N/A'}
                         icon={Grid}
                         color="text-zinc-300"
                         bgColor="bg-zinc-950/70 border-zinc-800/80"
