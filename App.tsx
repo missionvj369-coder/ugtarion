@@ -96,7 +96,7 @@ const App: React.FC = () => {
                 <Route path="/verify/:uid" element={<LazyVerificationPage />} />
                 <Route path="/auth/callback" element={<LazyVerificationPage />} />
                 <Route path="/password-reset" element={<LazyPasswordResetRequest onBackToLogin={() => {}} />} />
-                <Route path="/password-reset/confirm" element={<LazyPasswordResetConfirm onBackToLogin={() => {}} />} />
+                <Route path="/password-reset/confirm/:token" element={<LazyPasswordResetConfirm onBackToLogin={() => {}} />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>

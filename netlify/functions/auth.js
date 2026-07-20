@@ -240,9 +240,9 @@ async function handleForgotPassword(event) {
         }
       }
       
-      // Build the reset URL - use the correct route
+      // Build the reset URL - use the correct route with path parameter
       const frontendUrl = process.env.FRONTEND_URL || 'https://ugtglobal.space';
-      const resetUrl = `${frontendUrl}/password-reset/confirm?token=${resetToken}`;
+      const resetUrl = `${frontendUrl}/password-reset/confirm/${resetToken}`;
       
       // Send password reset email via Brevo
       try {
