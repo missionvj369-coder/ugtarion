@@ -947,89 +947,89 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                     </div>
                   </div>
 
-                    {/* Geographic details - Improved mobile layout */}
-                    <div className="pt-2 border-t border-zinc-800/40">
-                      <p className="text-[10px] uppercase tracking-widest text-indigo-400 mb-3 font-semibold font-mono flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
-                        Geographic Alignment
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <div className="sm:col-span-2 lg:col-span-1">
-                          <label htmlFor="reg-nation" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">Nation</label>
-                          <input 
-                            id="reg-nation"
-                            type="text" 
-                            required
-                            disabled={isLoading}
-                            autoComplete="country"
-                            placeholder="e.g. Poland"
-                            value={nation}
-                            onChange={(e) => setNation(e.target.value)}
-                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
-                          />
-                        </div>
+                  {/* Geographic details - Improved mobile layout */}
+                  <div className="pt-2 border-t border-zinc-800/40">
+                    <p className="text-[10px] uppercase tracking-widest text-indigo-400 mb-3 font-semibold font-mono flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
+                      Geographic Alignment
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor="reg-nation" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">Nation</label>
+                        <input 
+                          id="reg-nation"
+                          type="text" 
+                          required
+                          disabled={isLoading}
+                          autoComplete="country"
+                          placeholder="e.g. Poland"
+                          value={nation}
+                          onChange={(e) => setNation(e.target.value)}
+                          className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                        />
+                      </div>
 
-                        <div className="sm:col-span-2 lg:col-span-1">
-                          <label htmlFor="reg-state" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">State / Region</label>
-                          <input 
-                            id="reg-state"
-                            type="text" 
-                            required
-                            disabled={isLoading}
-                            autoComplete="address-level1"
-                            placeholder="e.g. Warmia"
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
-                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
-                          />
-                        </div>
+                      <div>
+                        <label htmlFor="reg-state" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">State / Region</label>
+                        <input 
+                          id="reg-state"
+                          type="text" 
+                          required
+                          disabled={isLoading}
+                          autoComplete="address-level1"
+                          placeholder="e.g. Warmia"
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                        />
+                      </div>
 
-                        <div className="sm:col-span-2 lg:col-span-1">
-                          <label htmlFor="reg-district" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">District</label>
-                          <input 
-                            id="reg-district"
-                            type="text" 
-                            required
-                            disabled={isLoading}
-                            autoComplete="address-level2"
-                            placeholder="e.g. Frombork"
-                            value={district}
-                            onChange={(e) => setDistrict(e.target.value)}
-                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
-                          />
-                        </div>
+                      <div>
+                        <label htmlFor="reg-district" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">District</label>
+                        <input 
+                          id="reg-district"
+                          type="text" 
+                          required
+                          disabled={isLoading}
+                          autoComplete="address-level2"
+                          placeholder="e.g. Frombork"
+                          value={district}
+                          onChange={(e) => setDistrict(e.target.value)}
+                          className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                        />
+                      </div>
 
-                        <div className="sm:col-span-2 lg:col-span-1">
-                          <label htmlFor="reg-city" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">City / Town</label>
-                          <input 
-                            id="reg-city"
-                            type="text" 
-                            required
-                            disabled={isLoading}
-                            autoComplete="address-level3"
-                            placeholder="e.g. Torun"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
-                          />
-                        </div>
+                      <div>
+                        <label htmlFor="reg-city" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">City / Town</label>
+                        <input 
+                          id="reg-city"
+                          type="text" 
+                          required
+                          disabled={isLoading}
+                          autoComplete="address-level3"
+                          placeholder="e.g. Torun"
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                        />
+                      </div>
 
-                        <div className="sm:col-span-2 lg:col-span-1">
-                          <label htmlFor="reg-pincode" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">Pincode</label>
-                          <input 
-                            id="reg-pincode"
-                            type="text" 
-                            required
-                            disabled={isLoading}
-                            autoComplete="postal-code"
-                            placeholder="e.g. 87-100"
-                            value={pincode}
-                            onChange={(e) => setPincode(e.target.value)}
-                            className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
-                          />
-                        </div>
+                      <div>
+                        <label htmlFor="reg-pincode" className="block text-[9px] uppercase tracking-wider text-zinc-500 mb-1 font-semibold">Pincode</label>
+                        <input 
+                          id="reg-pincode"
+                          type="text" 
+                          required
+                          disabled={isLoading}
+                          autoComplete="postal-code"
+                          placeholder="e.g. 87-100"
+                          value={pincode}
+                          onChange={(e) => setPincode(e.target.value)}
+                          className="w-full px-4 py-3 bg-zinc-950/60 border border-zinc-800 rounded-xl text-white text-sm font-light focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all min-h-[48px]"
+                        />
                       </div>
                     </div>
+                  </div>
 
                   <button
                     type="submit"
