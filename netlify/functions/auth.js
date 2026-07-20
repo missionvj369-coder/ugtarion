@@ -1299,7 +1299,12 @@ async function handleJWKS(event) {
 // ============================================
 
 export const handler = async function(event, context) {
-  const path = event.path.replace('/.netlify/functions/auth', '');
+  // Handle both direct function calls and redirects from /auth/*
+  let path = event.path.replace('/.netlify/functions/auth', '');
+  if (path === event.path) {
+    // If no change, try removing /auth prefix
+    path = event.path.replace('/auth', '');
+  }
   const method = event.httpMethod;
 
   // Handle CORS preflight
