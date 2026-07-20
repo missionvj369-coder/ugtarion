@@ -13,10 +13,10 @@
  * - GET  /.netlify/functions/auth/jwks            - JWKS Endpoint
  */
 
-const { createClient } = require('@supabase/supabase-js');
-const { SignJWT, jwtVerify, importPKCS8, importSPKI, generateKeyPair, exportPKCS8, exportSPKI } = require('jose');
-const { randomBytes, createHash } = require('crypto');
-const { sendPasswordResetEmail, sendPasswordResetConfirmationEmail } = require('./brevo-email');
+import { createClient } from '@supabase/supabase-js';
+import { SignJWT, jwtVerify, importPKCS8, importSPKI, generateKeyPair, exportPKCS8, exportSPKI } from 'jose';
+import { randomBytes, createHash } from 'crypto';
+import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from './brevo-email.js';
 
 // ============================================
 // Password Authentication Handlers
@@ -727,6 +727,7 @@ async function buildUserInfo(universalId, platformId, scope) {
 
 function corsHeaders(origin) {
   const allowedOrigins = [
+    'https://ugtglobal.space',
     'https://universal-guard-trust.netlify.app',
     'http://localhost:5173',
     'http://localhost:3000',
@@ -1297,7 +1298,7 @@ async function handleJWKS(event) {
 // Main Handler
 // ============================================
 
-exports.handler = async function(event, context) {
+export const handler = async function(event, context) {
   const path = event.path.replace('/.netlify/functions/auth', '');
   const method = event.httpMethod;
 

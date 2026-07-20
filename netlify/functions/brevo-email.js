@@ -123,7 +123,7 @@ async function testBrevoConnection() {
   }
 }
 
-module.exports = {
+export {
   sendBrevoEmail,
   sendPasswordResetEmail,
   sendPasswordResetConfirmationEmail,
