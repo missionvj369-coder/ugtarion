@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_phone ON public.profiles(phone);
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.password_reset_tokens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id BIGINT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     token_hash TEXT UNIQUE NOT NULL,
     identifier TEXT NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
@@ -86,7 +86,7 @@ RETURNS TABLE(
     expires_at TIMESTAMPTZ
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-    v_user_id BIGINT;
+    v_user_id UUID;
     v_token TEXT;
     v_token_hash TEXT;
     v_expires_at TIMESTAMPTZ;
@@ -137,7 +137,7 @@ CREATE OR REPLACE FUNCTION public.verify_password_reset_token(
 )
 RETURNS TABLE(
     valid BOOLEAN,
-    user_id BIGINT,
+    user_id UUID,
     identifier TEXT,
     expires_at TIMESTAMPTZ
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -235,7 +235,7 @@ CREATE OR REPLACE FUNCTION public.login_with_password(
 )
 RETURNS TABLE(
     success BOOLEAN,
-    user_id BIGINT,
+    user_id UUID,
     universal_id TEXT,
     message TEXT
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -296,7 +296,7 @@ RETURNS TABLE(
 DECLARE
     v_universal_id TEXT;
     v_password_hash TEXT;
-    v_profile_id BIGINT;
+    v_profile_id UUID;
 BEGIN
     IF LENGTH(p_password) < 8 THEN
         RETURN QUERY SELECT false, NULL, 'Password must be at least 8 characters long';
@@ -348,7 +348,7 @@ GRANT EXECUTE ON FUNCTION public.register_user_with_password(TEXT, DATE, TEXT, T
 DROP FUNCTION IF EXISTS public.login_user_atomic(TEXT);
 CREATE OR REPLACE FUNCTION public.login_user_atomic(p_identifier TEXT)
 RETURNS TABLE (
-    id BIGINT,
+    id UUID,
     universal_id TEXT,
     name TEXT,
     dob DATE,
@@ -374,7 +374,7 @@ DECLARE
 BEGIN
     RETURN QUERY
     SELECT
-        p.id::BIGINT,
+        p.id::UUID,
         p.universal_id::TEXT,
         p.name::TEXT,
         p.dob::DATE,
