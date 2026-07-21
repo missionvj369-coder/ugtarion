@@ -4,9 +4,9 @@
 # SPA fallback - all routes except API and static files go to index.html
 /*    /index.html   200
 
-# Password reset routes
-/password-reset    /index.html   200
-/password-reset/*  /index.html   200
+# Password reset routes - use query parameter format
+/password-reset              /index.html   200
+/password-reset/confirm      /index.html   200
 
 # Auth routes
 /auth/callback     /index.html   200

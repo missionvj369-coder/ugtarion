@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import SectionWrapper from './SectionWrapper';
 import { resetPassword } from '../lib/supabaseClient';
 import { ArrowLeftIcon, LockIcon, AlertCircleIcon, CheckCircleIcon, Loader2Icon, EyeIcon, EyeOffIcon } from './icons';
@@ -9,7 +9,8 @@ interface PasswordResetConfirmProps {
 }
 
 export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProps) {
-  const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
