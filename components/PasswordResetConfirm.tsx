@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SectionWrapper from './SectionWrapper';
-import { confirmPasswordReset } from '../lib/apiClient';
+import { resetPassword } from '../lib/supabaseClient';
 import { ArrowLeftIcon, LockIcon, AlertCircleIcon, CheckCircleIcon, Loader2Icon, EyeIcon, EyeOffIcon } from './icons';
 
 interface PasswordResetConfirmProps {
-  onBackToLogin: () => void;
+  onBackToLogin?: () => void;
 }
 
 export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProps) {
@@ -19,6 +19,14 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [tokenValid, setTokenValid] = useState(true);
+
+  const handleBackToLogin = () => {
+    if (onBackToLogin) {
+      onBackToLogin();
+    } else {
+      navigate('/');
+    }
+  };
 
   const validatePassword = (pwd: string): string | null => {
     if (pwd.length < 8) return 'Password must be at least 8 characters';
@@ -60,7 +68,7 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
     setStatus('loading');
 
     try {
-      const response = await confirmPasswordReset(token, password);
+      const response = await resetPassword(token, password);
       setStatus('success');
       setMessage(response.message || 'Password has been successfully reset. Please log in with your new password.');
     } catch (err: any) {
@@ -79,40 +87,40 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
   }, [token]);
 
   return (
-    <SectionWrapper className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <SectionWrapper className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-zinc-950">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
+        <div className="text-center relative">
           <button
-            onClick={onBackToLogin}
-            className="absolute left-0 top-0 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+            onClick={handleBackToLogin}
+            className="absolute left-0 top-0 flex items-center text-zinc-400 hover:text-white transition-colors"
             aria-label="Back to login"
           >
             <ArrowLeftIcon className="w-5 h-5" />
             <span className="ml-1 text-sm">Back to Login</span>
           </button>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Reset your password</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h2 className="mt-6 text-3xl font-extrabold text-white">Reset your password</h2>
+          <p className="mt-2 text-sm text-zinc-400">
             Enter your new password below. Make sure it's strong and unique.
           </p>
         </div>
 
         {!tokenValid && (
           <div className="text-center">
-            <div className="flex items-center text-red-600 text-sm justify-center" role="alert">
+            <div className="flex items-center text-red-400 text-sm justify-center" role="alert">
               <AlertCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
               <span>{error || 'Invalid or expired reset token. Please request a new password reset link.'}</span>
             </div>
             <div className="mt-4 text-center">
               <button
-                onClick={onBackToLogin}
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                onClick={handleBackToLogin}
+                className="font-medium text-green-400 hover:text-green-300"
               >
                 ← Back to Login
               </button>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-zinc-400">
                 <button
-                  onClick={onBackToLogin}
-                  className="font-medium text-indigo-600 hover:text-indigo-500"
+                  onClick={() => navigate('/password-reset')}
+                  className="font-medium text-green-400 hover:text-green-300"
                 >
                   Request a new reset link
                 </button>
@@ -129,7 +137,7 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
                   New password
                 </label>
                 <div className="relative">
-                  <LockIcon className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 w-5 h-5" />
+                  <LockIcon className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 w-5 h-5" />
                   <input
                     id="password"
                     name="password"
@@ -138,14 +146,14 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="appearance-none relative block w-full pl-10 pr-12 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                    className="appearance-none relative block w-full pl-10 pr-12 py-3 border border-zinc-700 placeholder-zinc-500 text-white bg-zinc-900 rounded-t-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                     placeholder="New password"
                     disabled={status === 'loading' || status === 'success'}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
@@ -157,7 +165,7 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
                   Confirm new password
                 </label>
                 <div className="relative">
-                  <LockIcon className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 w-5 h-5" />
+                  <LockIcon className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 w-5 h-5" />
                   <input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -166,14 +174,14 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="appearance-none relative block w-full pl-10 pr-12 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                    className="appearance-none relative block w-full pl-10 pr-12 py-3 border border-zinc-700 placeholder-zinc-500 text-white bg-zinc-900 rounded-b-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                     placeholder="Confirm new password"
                     disabled={status === 'loading' || status === 'success'}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white"
                     aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   >
                     {showConfirmPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
@@ -183,14 +191,14 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
             </div>
 
             {error && (
-              <div className="flex items-center text-red-600 text-sm" role="alert">
+              <div className="flex items-center text-red-400 text-sm" role="alert">
                 <AlertCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             {status === 'success' && (
-              <div className="flex items-center text-green-600 text-sm" role="status">
+              <div className="flex items-center text-emerald-400 text-sm" role="status">
                 <CheckCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span>{message}</span>
               </div>
@@ -200,7 +208,7 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
               <button
                 type="submit"
                 disabled={status === 'loading' || status === 'success'}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {status === 'loading' ? (
                   <Loader2Icon className="w-5 h-5 animate-spin" />
@@ -214,10 +222,10 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
 
         {status === 'success' && (
           <div className="text-center">
-            <p className="mt-4 text-sm text-gray-600">
+            <p className="mt-4 text-sm text-zinc-400">
               <button
-                onClick={onBackToLogin}
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                onClick={handleBackToLogin}
+                className="font-medium text-green-400 hover:text-green-300"
               >
                 ← Back to Login
               </button>

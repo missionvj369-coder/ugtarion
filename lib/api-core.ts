@@ -101,13 +101,13 @@ export function buildRecord(profile: any, ranks: any): UniversalIdRecord {
     state: profile.state,
     nation: profile.nation,
     registeredAt: profile.created_at,
-    order: Number(ranks.global_order),
-    universeRank: Number(ranks.universe_rank),
-    nationRank: Number(ranks.nation_rank),
-    stateRank: Number(ranks.state_rank),
-    districtRank: Number(ranks.district_rank),
-    cityRank: Number(ranks.city_rank),
-    pincodeRank: Number(ranks.pincode_rank),
+    order: Number(ranks.global_order || profile.order || 0),
+    universeRank: Number(ranks.universe_rank || profile.universe_rank || 0),
+    nationRank: Number(ranks.nation_rank || profile.nation_rank || 0),
+    stateRank: Number(ranks.state_rank || profile.state_rank || 0),
+    districtRank: Number(ranks.district_rank || profile.district_rank || 0),
+    cityRank: Number(ranks.city_rank || profile.city_rank || 0),
+    pincodeRank: Number(ranks.pincode_rank || profile.pincode_rank || 0),
   };
 }
 

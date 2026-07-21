@@ -19,3 +19,10 @@
   from = "/auth/*"
   to = "/.netlify/functions/auth/:splat"
   status = 200
+
+# SPA Fallback - must be last redirect
+# This handles all client-side routes (password-reset, verify, etc.)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

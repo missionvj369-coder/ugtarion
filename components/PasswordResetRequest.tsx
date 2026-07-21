@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SectionWrapper from './SectionWrapper';
-import { requestPasswordReset } from '../lib/apiClient';
+import { requestPasswordReset } from '../lib/supabaseClient';
 import { ArrowLeftIcon, MailIcon, AlertCircleIcon, CheckCircleIcon, Loader2Icon } from './icons';
 
 interface PasswordResetRequestProps {
-  onBackToLogin: () => void;
+  onBackToLogin?: () => void;
 }
 
 export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProps) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  const handleBackToLogin = () => {
+    if (onBackToLogin) {
+      onBackToLogin();
+    } else {
+      navigate('/');
+    }
+  };
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,19 +58,19 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
   };
 
   return (
-    <SectionWrapper className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <SectionWrapper className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-zinc-950">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
+        <div className="text-center relative">
           <button
-            onClick={onBackToLogin}
-            className="absolute left-0 top-0 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+            onClick={handleBackToLogin}
+            className="absolute left-0 top-0 flex items-center text-zinc-400 hover:text-white transition-colors"
             aria-label="Back to login"
           >
             <ArrowLeftIcon className="w-5 h-5" />
             <span className="ml-1 text-sm">Back to Login</span>
           </button>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Forgot your password?</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h2 className="mt-6 text-3xl font-extrabold text-white">Forgot your password?</h2>
+          <p className="mt-2 text-sm text-zinc-400">
             Enter your email address and we'll send you a link to reset your password.
           </p>
         </div>
@@ -72,7 +82,7 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
                 Email address
               </label>
               <div className="relative">
-                <MailIcon className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 w-5 h-5" />
+                <MailIcon className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 w-5 h-5" />
                 <input
                   id="email"
                   name="email"
@@ -81,7 +91,7 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-zinc-700 placeholder-zinc-500 text-white bg-zinc-900 rounded-t-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                   placeholder="Email address"
                   disabled={status === 'loading' || status === 'success'}
                 />
@@ -90,14 +100,14 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
           </div>
 
           {error && (
-            <div className="flex items-center text-red-600 text-sm" role="alert">
+            <div className="flex items-center text-red-400 text-sm" role="alert">
               <AlertCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {status === 'success' && (
-            <div className="flex items-center text-green-600 text-sm" role="status">
+            <div className="flex items-center text-emerald-400 text-sm" role="status">
               <CheckCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
               <span>{message}</span>
             </div>
@@ -107,7 +117,7 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
             <button
               type="submit"
               disabled={status === 'loading' || status === 'success'}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {status === 'loading' ? (
                 <Loader2Icon className="w-5 h-5 animate-spin" />
@@ -120,19 +130,19 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
 
         {status === 'success' && (
           <div className="text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-zinc-400">
               Didn't receive the email?{' '}
               <button
                 onClick={() => setStatus('idle')}
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                className="font-medium text-green-400 hover:text-green-300"
               >
                 Try again
               </button>
             </p>
-            <p className="mt-4 text-sm text-gray-600">
+            <p className="mt-4 text-sm text-zinc-400">
               <button
-                onClick={onBackToLogin}
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                onClick={handleBackToLogin}
+                className="font-medium text-green-400 hover:text-green-300"
               >
                 ← Back to Login
               </button>

@@ -8,6 +8,13 @@ interface VerificationData {
   name: string;
   email: string;
   phone?: string;
+  // Geographic details
+  nation?: string;
+  state?: string;
+  district?: string;
+  city?: string;
+  pincode?: string;
+  // Ranks
   universe_rank?: number;
   world_rank?: number;
   country_rank?: number;
@@ -180,15 +187,44 @@ const VerificationPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      // Fetch verification data from the API
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/verify/${uid}`);
+      // Fetch verification data from the API using the profile endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/profile/${uid}`);
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Universal ID not found in the registry');
         }
         throw new Error('Failed to fetch verification data');
       }
-      const verificationData = await response.json();
+      const profileData = await response.json();
+      
+      // Convert API response to VerificationData format
+      const verificationData: VerificationData = {
+        universal_id: profileData.id,
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        // Geographic details
+        nation: profileData.nation,
+        state: profileData.state,
+        district: profileData.district,
+        city: profileData.city,
+        pincode: profileData.pincode,
+        // Ranks
+        universe_rank: profileData.universeRank,
+        world_rank: profileData.universeRank, // Using universe as world
+        country_rank: profileData.nationRank,
+        state_rank: profileData.stateRank,
+        district_rank: profileData.districtRank,
+        city_rank: profileData.cityRank,
+        area_rank: profileData.pincodeRank,
+        street_rank: undefined,
+        landmark_rank: undefined,
+        building_rank: undefined,
+        floor_rank: undefined,
+        unit_rank: undefined,
+        created_at: profileData.registeredAt,
+      };
+      
       setData(verificationData);
     } catch (err: any) {
       setError(err.message || 'Failed to verify Universal ID');
@@ -298,6 +334,98 @@ const VerificationPage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Geographic Details Section */}
+            {(data.nation || data.state || data.district || data.city || data.pincode) && (
+              <div className="border-t border-zinc-200 pt-4">
+                <h3 className="text-lg font-semibold text-zinc-800 mb-4 flex items-center gap-2">
+                  <span className="text-xl">🌍</span>
+                  Geographic Location
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {data.nation && (
+                    <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">🏳️</span>
+                        <div>
+                          <p className="text-xs text-zinc-500">Country</p>
+                          <p className="font-medium text-zinc-700">{data.nation}</p>
+                        </div>
+                      </div>
+                      {data.country_rank && (
+                        <span className="font-mono font-bold text-blue-600 px-2 py-1 bg-blue-50 rounded-lg text-sm">
+                          #{data.country_rank}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {data.state && (
+                    <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">🏛️</span>
+                        <div>
+                          <p className="text-xs text-zinc-500">State / Region</p>
+                          <p className="font-medium text-zinc-700">{data.state}</p>
+                        </div>
+                      </div>
+                      {data.state_rank && (
+                        <span className="font-mono font-bold text-blue-600 px-2 py-1 bg-blue-50 rounded-lg text-sm">
+                          #{data.state_rank}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {data.district && (
+                    <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">🏘️</span>
+                        <div>
+                          <p className="text-xs text-zinc-500">District</p>
+                          <p className="font-medium text-zinc-700">{data.district}</p>
+                        </div>
+                      </div>
+                      {data.district_rank && (
+                        <span className="font-mono font-bold text-blue-600 px-2 py-1 bg-blue-50 rounded-lg text-sm">
+                          #{data.district_rank}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {data.city && (
+                    <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">🏙️</span>
+                        <div>
+                          <p className="text-xs text-zinc-500">City / Town</p>
+                          <p className="font-medium text-zinc-700">{data.city}</p>
+                        </div>
+                      </div>
+                      {data.city_rank && (
+                        <span className="font-mono font-bold text-blue-600 px-2 py-1 bg-blue-50 rounded-lg text-sm">
+                          #{data.city_rank}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {data.pincode && (
+                    <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">📍</span>
+                        <div>
+                          <p className="text-xs text-zinc-500">Pincode / Postal Code</p>
+                          <p className="font-medium text-zinc-700">{data.pincode}</p>
+                        </div>
+                      </div>
+                      {data.area_rank && (
+                        <span className="font-mono font-bold text-blue-600 px-2 py-1 bg-blue-50 rounded-lg text-sm">
+                          #{data.area_rank}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Ranks Section */}
             <div className="border-t border-zinc-200 pt-4">
