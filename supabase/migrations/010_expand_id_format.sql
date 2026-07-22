@@ -79,6 +79,7 @@ DECLARE
     v_status TEXT;
     v_daily_rate BIGINT;
     v_days_left BIGINT;
+    v_estimated_exhaustion_date TEXT;
 BEGIN
     -- Get current sequence value
     SELECT last_value INTO v_current FROM public.ugt_id_seq;
