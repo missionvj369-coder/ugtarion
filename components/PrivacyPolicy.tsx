@@ -114,7 +114,7 @@ const PrivacyPolicy: React.FC = () => {
               <li>Withdraw consent</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-4">
-              To exercise these rights, contact us at privacy@ugtglobal.space.
+              To exercise these rights, contact us at oneness@ugtglobal.space.
             </p>
           </section>
 
@@ -160,7 +160,7 @@ const PrivacyPolicy: React.FC = () => {
             </p>
             <div className="mt-4 p-4 bg-slate-50 rounded-lg">
               <p className="text-slate-700 font-medium">Universal Guard Trust</p>
-              <p className="text-slate-600">Email: privacy@ugtglobal.space</p>
+              <p className="text-slate-600">Email: oneness@ugtglobal.space</p>
               <p className="text-slate-600">Website: www.ugtglobal.space</p>
             </div>
           </section>

@@ -438,9 +438,33 @@ export const loginWithPassword = async (identifier: string, password: string): P
     throw new Error('Invalid credentials. Please check your email/phone/UID and password.');
   }
 
-  const profile = result[0];
+  const loginResult = result[0];
+  
+  // CRITICAL: Check the success flag from the database function
+  if (!loginResult.success) {
+    throw new Error(loginResult.message || 'Invalid credentials. Please check your email/phone/UID and password.');
+  }
+
+  // Fetch the full profile with rankings for the dashboard
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('universal_id', loginResult.universal_id)
+    .single();
+
+  if (profileError || !profile) {
+    throw new Error('Failed to load profile. Please try again.');
+  }
+
+  const { data: standings } = await supabase
+    .rpc('calculate_universal_standings', { target_uid: profile.universal_id });
+
+  if (!standings || standings.length === 0) {
+    throw new Error('Failed to load rankings. Please try again.');
+  }
+
   setActiveSupabaseUserId(profile.universal_id);
-  return buildRecord(profile, profile);
+  return buildRecord(profile, standings[0]);
 };
 
 /**

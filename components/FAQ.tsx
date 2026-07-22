@@ -12,7 +12,7 @@ const faqData: FAQItem[] = [
   {
     category: 'General',
     question: 'What is Universal Guard Trust?',
-    answer: 'Universal Guard Trust (UGT) is a global identity verification and trust system that provides every individual with a unique Universal ID. Our platform enables secure identity verification that transcends borders, ensuring trust and security in an increasingly connected world.'
+    answer: 'Universal Guard Trust (UGT) is an initiative designed to foster global human evolution and consciousness. Positioning itself as a bridge between science, spirituality, and organizational frameworks, UGT aims to redesign social systems and guide national transformation—with an emphasis on youth programs, strategic alliances, and global community building. Through its platform, UGT invites individuals to register as "Guardians" to receive a sovereign Universal ID, offering a structured identification hierarchy aimed at uniting conscious beings to shape the future of civilization.'
   },
   {
     category: 'General',
@@ -66,7 +66,7 @@ const faqData: FAQItem[] = [
   {
     category: 'Security',
     question: 'What should I do if I suspect unauthorized access?',
-    answer: 'If you suspect someone has accessed your account: 1) Change your password immediately, 2) Contact our support team at security@ugtglobal.space, 3) Review your account activity for any unauthorized actions, 4) Enable additional security measures if available. We recommend using a unique, strong password and being cautious of phishing attempts.'
+    answer: 'If you suspect someone has accessed your account: 1) Change your password immediately, 2) Contact our support team at oneness@ugtglobal.space, 3) Review your account activity for any unauthorized actions, 4) Enable additional security measures if available. We recommend using a unique, strong password and being cautious of phishing attempts.'
   },
   {
     category: 'Security',
@@ -88,7 +88,7 @@ const faqData: FAQItem[] = [
   {
     category: 'Privacy',
     question: 'Can I delete my account and data?',
-    answer: 'Yes, you have the right to request deletion of your account and personal data. Contact our support team at privacy@ugtglobal.space with your request. Please note that certain information may be retained as required by law or for legitimate business purposes such as fraud prevention.'
+    answer: 'Yes, you have the right to request deletion of your account and personal data. Contact our support team at oneness@ugtglobal.space with your request. Please note that certain information may be retained as required by law or for legitimate business purposes such as fraud prevention.'
   },
   {
     category: 'Privacy',

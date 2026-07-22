@@ -243,7 +243,7 @@ const TermsOfService: React.FC = () => {
             </p>
             <div className="mt-4 p-4 bg-slate-50 rounded-lg">
               <p className="text-slate-700 font-medium">Universal Guard Trust</p>
-              <p className="text-slate-600">Email: legal@ugtglobal.space</p>
+              <p className="text-slate-600">Email: oneness@ugtglobal.space</p>
               <p className="text-slate-600">Website: www.ugtglobal.space</p>
             </div>
           </section>
