@@ -263,6 +263,106 @@
     .animate-fade-in-scale-up {
       animation: fade-in-scale-up 0.3s ease-out forwards;
     }
+
+    /* Print Styles - Only show ID Card */
+    @media print {
+      /* Hide everything by default */
+      body * {
+        visibility: hidden !important;
+        display: none !important;
+      }
+      
+      /* Show only the ID card when printing-id-card class is present */
+      body.printing-id-card {
+        visibility: visible !important;
+        display: block !important;
+        background: #09090b !important;
+      }
+      
+      body.printing-id-card #root {
+        visibility: visible !important;
+        display: block !important;
+      }
+      
+      /* Target the specific card by ID */
+      body.printing-id-card #ugt-id-card,
+      body.printing-id-card [id="ugt-id-card"] {
+        visibility: visible !important;
+        display: block !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 340px !important;
+        height: 214px !important;
+        max-width: 340px !important;
+        box-shadow: none !important;
+        border: 1px solid #3f3f46 !important;
+        background: #18181b !important;
+        overflow: visible !important;
+        border-radius: 16px !important;
+        z-index: 999999 !important;
+      }
+      
+      /* Ensure all nested elements in the card are visible */
+      body.printing-id-card #ugt-id-card *,
+      body.printing-id-card [id="ugt-id-card"] * {
+        visibility: visible !important;
+        display: block !important;
+      }
+      
+      /* Hide buttons and interactive elements when printing */
+      body.printing-id-card button, 
+      body.printing-id-card a, 
+      body.printing-id-card input, 
+      body.printing-id-card .print\:hidden, 
+      body.printing-id-card [aria-label*="Copy"], 
+      body.printing-id-card [aria-label*="Print"] {
+        display: none !important;
+        visibility: hidden !important;
+      }
+      
+      /* Print background colors */
+      body.printing-id-card .bg-zinc-950 {
+        background: #18181b !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      /* Print text colors */
+      body.printing-id-card .text-amber-300, 
+      body.printing-id-card .text-amber-100, 
+      body.printing-id-card .text-yellow-200 {
+        color: #fbbf24 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      body.printing-id-card .text-zinc-100, 
+      body.printing-id-card .text-zinc-300 {
+        color: #f4f4f5 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      body.printing-id-card .text-indigo-300 {
+        color: #a5b4fc !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      /* Print background gradients */
+      body.printing-id-card .bg-gradient-to-r, 
+      body.printing-id-card .bg-gradient-to-br {
+        background: transparent !important;
+      }
+      
+      /* Page setup for credit card size */
+      @page {
+        size: 85.60mm 53.98mm;
+        margin: 0;
+      }
+    }
   </style>
 <script type="importmap">
 {

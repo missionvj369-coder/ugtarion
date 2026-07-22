@@ -21,13 +21,10 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
   const [error, setError] = useState('');
   const [tokenValid, setTokenValid] = useState(true);
 
-  const handleBackToLogin = () => {
-    if (onBackToLogin) {
-      onBackToLogin();
-    } else {
+    const handleBackToLogin = () => {
+      // Navigate to home page - the UniversalIdPortal will be shown
       navigate('/');
-    }
-  };
+    };
 
   const validatePassword = (pwd: string): string | null => {
     if (pwd.length < 8) return 'Password must be at least 8 characters';
@@ -72,6 +69,11 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
       const response = await resetPassword(token, password);
       setStatus('success');
       setMessage(response.message || 'Password has been successfully reset. Please log in with your new password.');
+      
+      // Auto-redirect to login after 3 seconds
+      setTimeout(() => {
+        handleBackToLogin();
+      }, 3000);
     } catch (err: any) {
       setStatus('error');
       setTokenValid(false);

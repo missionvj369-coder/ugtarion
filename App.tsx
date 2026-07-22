@@ -16,6 +16,9 @@ import FadeIn from './components/FadeIn';
 import VerificationPage from './components/VerificationPage';
 import { PasswordResetRequest } from './components/PasswordResetRequest';
 import { PasswordResetConfirm } from './components/PasswordResetConfirm';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
+import FAQ from './components/FAQ';
 import { createUGTAuthClient, UGTAuthClient } from './lib/ugt-auth-client';
 import ErrorBoundary, { setupGlobalErrorHandlers } from './components/ErrorBoundary';
 import HealthCheck from './components/HealthCheck';
@@ -97,6 +100,9 @@ const App: React.FC = () => {
                 <Route path="/auth/callback" element={<LazyVerificationPage />} />
                 <Route path="/password-reset" element={<LazyPasswordResetRequest onBackToLogin={() => window.history.back()} />} />
                 <Route path="/password-reset/confirm" element={<LazyPasswordResetConfirm onBackToLogin={() => window.history.back()} />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/faq" element={<FAQ />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
