@@ -25,32 +25,35 @@ BEGIN
         v_id := v_prefix || LPAD(v_seq_value::TEXT, 9, '0');
     ELSE
         -- Overflow to alphanumeric: UGT-A00000001, UGT-B00000001, etc.
-        -- Convert to base-26 (A-Z) for the prefix
+        -- Simple approach: Use base-26 encoding for overflow
         DECLARE
-            v_letter_prefix TEXT;
-            v_remaining BIGINT;
-            v_letter_count INT;
-            v_char_index INT;
-            v_letter_part TEXT := '';
+            v_offset BIGINT;
+            v_letter_index BIGINT;
+            v_letter TEXT;
+            v_digit_part BIGINT;
         BEGIN
-            v_remaining := v_seq_value - v_max_numeric;
-            v_letter_count := 1;
+            -- Calculate offset from max numeric
+            v_offset := v_seq_value - v_max_numeric;
             
-            -- Calculate how many letters we need
-            WHILE v_remaining > POW(26, v_letter_count) LOOP
-                v_remaining := v_remaining - POW(26, v_letter_count)::BIGINT;
-                v_letter_count := v_letter_count + 1;
-            END LOOP;
+            -- Determine letter (A=0, B=1, C=2, ... Z=25, then AA=26, etc.)
+            v_letter_index := (v_offset - 1) / 100000000; -- 100 million per letter block
+            v_digit_part := v_offset - (v_letter_index * 100000000);
             
-            -- Generate letter prefix (A, B, ... Z, AA, AB, ... ZZ, AAA, etc.)
-            v_remaining := v_seq_value - v_max_numeric;
-            FOR i IN 1..v_letter_count LOOP
-                v_char_index := (v_remaining / POW(26, v_letter_count - i))::INT % 26;
-                v_letter_part := v_letter_part || CHR(65 + v_char_index); -- A=65
-            END LOOP;
+            -- Convert to letter (A=0, B=1, etc.)
+            v_letter := CHR(65 + (v_letter_index % 26));
             
-            -- Generate remaining digits (8 digits after letters)
-            v_id := v_prefix || v_letter_part || LPAD((v_seq_value % 100000000)::TEXT, 8, '0');
+            -- If index >= 26, we need multiple letters (AA, AB, etc.)
+            IF v_letter_index >= 26 THEN
+                DECLARE
+                    v_second_letter_index BIGINT;
+                BEGIN
+                    v_second_letter_index := v_letter_index / 26;
+                    v_letter := CHR(65 + (v_second_letter_index % 26)) || CHR(65 + (v_letter_index % 26));
+                END;
+            END IF;
+            
+            -- Generate ID with letter prefix and 8 digits
+            v_id := v_prefix || v_letter || LPAD(v_digit_part::TEXT, 8, '0');
         END;
     END IF;
     
