@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <!-- SEO Meta Tags & Indexing -->
   <title>Universal Guard Trust — Elevating Consciousness, Universe Alignment & Evolutionary Trust</title>
@@ -69,6 +69,21 @@
     }
     html {
       scroll-behavior: smooth;
+    }
+    
+    /* Prevent mobile zoom on input focus */
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+    
+    /* Mobile layout stability */
+    @media screen and (max-width: 640px) {
+      input, select, textarea {
+        font-size: 16px !important;
+        -webkit-text-size-adjust: 100%;
+        -moz-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+      }
     }
     .font-serif {
       font-family: 'Cormorant Garamond', serif;
