@@ -11,7 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const BREVO_TEMPLATE_ID = parseInt(process.env.BREVO_TEMPLATE_ID || '1', 10);
-const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@yourdomain.com';
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'soulconnect@ugtglobal.space';
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Universal Guard Trust';
 
 interface BrevoEmailParams {

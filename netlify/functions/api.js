@@ -71,9 +71,31 @@ export async function handler(event) {
       return jsonResponse(result.error ? (result.error.includes('not found') ? 404 : 500) : 200, result.error ? { error: result.error, details: result.details } : result.data);
     }
 
-    // SECURITY: Removed insecure /verify/:uid endpoint
-    // Verification now requires OAuth flow via /auth/callback
-    // This prevents random UGT number access
+    // GET /verify/:uid - Public verification endpoint for QR code scanning
+    // This allows public verification of UGT IDs via QR codes
+    if (event.httpMethod === 'GET' && parts[0] === 'verify' && parts[1]) {
+      const uid = parts[1];
+      const result = await handleGetProfile(supabase, uid);
+      // Return limited public info for verification
+      if (result.error) {
+        return jsonResponse(404, { error: 'Universal ID not found in the registry.' });
+      }
+      const publicData = {
+        universal_id: result.data.id,
+        name: result.data.name,
+        registered_at: result.data.registered_at,
+        nation: result.data.nation,
+        state: result.data.state,
+        city: result.data.city,
+        universe_rank: result.data.universe_rank,
+        world_rank: result.data.universe_rank,
+        country_rank: result.data.country_rank,
+        state_rank: result.data.state_rank,
+        district_rank: result.data.district_rank,
+        city_rank: result.data.city_rank,
+      };
+      return jsonResponse(200, publicData);
+    }
 
     return jsonResponse(404, { error: 'Not found' });
   } catch (err) {

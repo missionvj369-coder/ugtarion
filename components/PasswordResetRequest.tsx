@@ -57,6 +57,27 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
     }
   };
 
+  // Resend email function
+  const handleResendEmail = async () => {
+    if (!email.trim() || !validateEmail(email)) {
+      setError('Please enter a valid email address first');
+      return;
+    }
+    
+    setStatus('loading');
+    setError('');
+    
+    try {
+      await requestPasswordReset(email.trim().toLowerCase());
+      setStatus('success');
+      setMessage('A new password reset link has been sent to your email. Please check your inbox and also check your spam/junk folder.');
+    } catch (err) {
+      // Even if the email doesn't exist, we show success for security
+      setStatus('success');
+      setMessage('A new password reset link has been sent. Please check your inbox and also check your spam/junk folder.');
+    }
+  };
+
   return (
     <SectionWrapper className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-zinc-950">
       <div className="max-w-md w-full space-y-8">
@@ -106,12 +127,19 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
             </div>
           )}
 
-          {status === 'success' && (
-            <div className="flex items-center text-emerald-400 text-sm" role="status">
-              <CheckCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+        {status === 'success' && (
+          <div className="space-y-3">
+            <div className="flex items-start text-emerald-400 text-sm" role="status">
+              <CheckCircleIcon className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
               <span>{message}</span>
             </div>
-          )}
+            <div className="bg-amber-900/20 border border-amber-700/30 rounded-md p-3">
+              <p className="text-amber-400 text-xs">
+                <strong>Important:</strong> If you don't see the email in your inbox, please check your <strong>spam</strong> or <strong>junk</strong> folder. Our emails are sent from soulconnect@ugtglobal.space.
+              </p>
+            </div>
+          </div>
+        )}
 
           <div>
             <button
@@ -129,17 +157,17 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
         </form>
 
         {status === 'success' && (
-          <div className="text-center">
+          <div className="text-center space-y-3">
             <p className="text-sm text-zinc-400">
               Didn't receive the email?{' '}
               <button
-                onClick={() => setStatus('idle')}
+                onClick={handleResendEmail}
                 className="font-medium text-green-400 hover:text-green-300"
               >
-                Try again
+                Resend email
               </button>
             </p>
-            <p className="mt-4 text-sm text-zinc-400">
+            <p className="text-sm text-zinc-400">
               <button
                 onClick={handleBackToLogin}
                 className="font-medium text-green-400 hover:text-green-300"

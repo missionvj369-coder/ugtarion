@@ -380,10 +380,10 @@ interface UniversalIdPortalProps {
             <button
               onClick={onPrint}
               className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-medium tracking-wider uppercase rounded-lg transition-all border border-zinc-700/50 hover:border-zinc-600/50 active:scale-[0.98]"
-              aria-label="Print or save ID card"
+              aria-label="Download ID card"
             >
-              <Printer className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Print</span>
+              <Download className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Download</span>
             </button>
           </div>
           
@@ -753,114 +753,112 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     if (!currentUser) return;
     
     try {
-      // Create a printable version
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        setError('Please allow popups to download the ID card.');
-        return;
-      }
-      
       const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/verify/${currentUser.id}`)}&margin=2&color=0f0f1a&bgcolor=transparent`;
       
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Universal ID Card - ${currentUser.id}</title>
-          <style>
-            @page { size: 85.60mm 53.98mm; margin: 0; }
-            body { margin: 0; padding: 0; background: #09090b; }
-            .card {
-              width: 340px;
-              height: 214px;
-              background: #18181b;
-              border: 1px solid #3f3f46;
-              border-radius: 16px;
-              padding: 20px;
-              box-sizing: border-box;
-              font-family: system-ui, -apple-system, sans-serif;
-              color: white;
-              position: relative;
-              overflow: hidden;
-            }
-            .header { display: flex; justify-content: space-between; margin-bottom: 16px; }
-            .logo { display: flex; align-items: center; gap: 8px; }
-            .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #3f3f46, #27272a); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-            .logo-text { font-size: 8px; color: #fbbf24; letter-spacing: 0.1em; font-weight: bold; }
-            .logo-sub { font-size: 7px; color: #a1a1aa; }
-            .qr { width: 48px; height: 48px; }
-            .qr img { width: 100%; height: 100%; }
-            .id-section { margin-bottom: 16px; }
-            .id-label { font-size: 6px; color: #71717a; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
-            .id-number { font-size: 24px; font-weight: 900; color: #fbbf24; letter-spacing: 0.05em; font-family: monospace; }
-            .order { font-size: 7px; color: #71717a; font-family: monospace; }
-            .divider { height: 1px; background: linear-gradient(90deg, transparent, #3f3f46, transparent); margin: 12px 0; }
-            .details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-            .detail-label { font-size: 6px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; }
-            .detail-value { font-size: 10px; color: #d4d4d8; font-weight: 500; }
-            .name-value { font-size: 14px; color: #f4f4f5; font-weight: 600; grid-column: span 2; }
-            .nation-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #3f3f46; }
-            .nation-label { font-size: 6px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; }
-            .nation-value { font-size: 14px; color: #f4f4f5; font-weight: 600; }
-            .footer { margin-top: auto; padding-top: 12px; display: flex; justify-content: space-between; font-size: 6px; color: #71717a; }
-            .verification { position: absolute; bottom: 8px; right: 8px; font-size: 5px; color: #52525b; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <div class="header">
-              <div class="logo">
-                <div class="logo-icon">🌐</div>
-                <div>
-                  <div class="logo-text">UNIVERSAL ID CARD</div>
-                  <div class="logo-sub">Universal Guard Trust</div>
-                </div>
-              </div>
-              <div class="qr">
-                <img src="${qrDataUrl}" alt="QR Code" crossorigin="anonymous" />
-              </div>
-            </div>
-            <div class="id-section">
-              <div class="id-label">Sovereign Identifier</div>
-              <div class="id-number">${currentUser.id}</div>
-              <div class="order">Order #${currentUser.order.toLocaleString()}</div>
-            </div>
-            <div class="divider"></div>
-            <div class="details">
-              <div class="name-value">${currentUser.name}</div>
-              <div>
-                <div class="detail-label">Date of Birth</div>
-                <div class="detail-value">${new Date(currentUser.dob).toLocaleDateString()}</div>
-              </div>
-              <div>
-                <div class="detail-label">Registered</div>
-                <div class="detail-value">${new Date(currentUser.registeredAt).toLocaleDateString()}</div>
-              </div>
-              <div>
-                <div class="detail-label">Universe Rank</div>
-                <div class="detail-value" style="color: #a5b4fc;">#${currentUser.universeRank?.toLocaleString() || 'N/A'}</div>
-              </div>
-            </div>
-            <div class="nation-section">
-              <div class="nation-label">🌍 Nation Alignment</div>
-              <div class="nation-value">${currentUser.nation}</div>
-            </div>
-            <div class="footer">
-              <span>SECURE • VERIFIED • SOVEREIGN</span>
-              <span>UGT-${new Date().getFullYear()}</span>
-            </div>
-            <div class="verification">${window.location.origin}/verify/${currentUser.id}</div>
-          </div>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-      }, 250);
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Universal ID Card - ${currentUser.id}</title>
+  <style>
+    @page { size: 85.60mm 53.98mm; margin: 0; }
+    body { margin: 0; padding: 0; background: #09090b; }
+    .card {
+      width: 340px;
+      height: 214px;
+      background: #18181b;
+      border: 1px solid #3f3f46;
+      border-radius: 16px;
+      padding: 20px;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #3f3f46, #27272a); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .logo-text { font-size: 8px; color: #fbbf24; letter-spacing: 0.1em; font-weight: bold; }
+    .logo-sub { font-size: 7px; color: #a1a1aa; }
+    .qr { width: 48px; height: 48px; }
+    .qr img { width: 100%; height: 100%; }
+    .id-section { margin-bottom: 16px; }
+    .id-label { font-size: 6px; color: #71717a; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+    .id-number { font-size: 24px; font-weight: 900; color: #fbbf24; letter-spacing: 0.05em; font-family: monospace; }
+    .order { font-size: 7px; color: #71717a; font-family: monospace; }
+    .divider { height: 1px; background: linear-gradient(90deg, transparent, #3f3f46, transparent); margin: 12px 0; }
+    .details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .detail-label { font-size: 6px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; }
+    .detail-value { font-size: 10px; color: #d4d4d8; font-weight: 500; }
+    .name-value { font-size: 14px; color: #f4f4f5; font-weight: 600; grid-column: span 2; }
+    .nation-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #3f3f46; }
+    .nation-label { font-size: 6px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; }
+    .nation-value { font-size: 14px; color: #f4f4f5; font-weight: 600; }
+    .footer { margin-top: auto; padding-top: 12px; display: flex; justify-content: space-between; font-size: 6px; color: #71717a; }
+    .verification { position: absolute; bottom: 8px; right: 8px; font-size: 5px; color: #52525b; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">🌐</div>
+        <div>
+          <div class="logo-text">UNIVERSAL ID CARD</div>
+          <div class="logo-sub">Universal Guard Trust</div>
+        </div>
+      </div>
+      <div class="qr">
+        <img src="${qrDataUrl}" alt="QR Code" crossorigin="anonymous" />
+      </div>
+    </div>
+    <div class="id-section">
+      <div class="id-label">Sovereign Identifier</div>
+      <div class="id-number">${currentUser.id}</div>
+      <div class="order">Order #${currentUser.order.toLocaleString()}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="details">
+      <div class="name-value">${currentUser.name}</div>
+      <div>
+        <div class="detail-label">Date of Birth</div>
+        <div class="detail-value">${new Date(currentUser.dob).toLocaleDateString()}</div>
+      </div>
+      <div>
+        <div class="detail-label">Registered</div>
+        <div class="detail-value">${new Date(currentUser.registeredAt).toLocaleDateString()}</div>
+      </div>
+      <div>
+        <div class="detail-label">Universe Rank</div>
+        <div class="detail-value" style="color: #a5b4fc;">#${currentUser.universeRank?.toLocaleString() || 'N/A'}</div>
+      </div>
+    </div>
+    <div class="nation-section">
+      <div class="nation-label">🌍 Nation Alignment</div>
+      <div class="nation-value">${currentUser.nation}</div>
+    </div>
+    <div class="footer">
+      <span>SECURE • VERIFIED • SOVEREIGN</span>
+      <span>UGT-${new Date().getFullYear()}</span>
+    </div>
+    <div class="verification">${window.location.origin}/verify/${currentUser.id}</div>
+  </div>
+</body>
+</html>`;
+      
+      // Create a Blob and download the file
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `UGT-ID-Card-${currentUser.id.replace(/[^a-zA-Z0-9]/g, '-')}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setSuccess('ID card downloaded successfully!');
     } catch (err) {
-      setError('Failed to generate ID card. Please try again.');
+      setError('Failed to download ID card. Please try again.');
     }
   };
 
@@ -1502,12 +1500,12 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                 </button>
 
                 <button
-                  onClick={printCard}
+                  onClick={downloadCard}
                   className="flex-1 py-3 px-4 bg-white hover:bg-zinc-100 text-zinc-950 font-medium text-[10px] tracking-wider uppercase rounded-xl transition-all flex items-center justify-center gap-2"
-                  aria-label="Print or save ID card"
+                  aria-label="Download ID card"
                 >
-                  <Printer className="w-4 h-4" aria-hidden="true" />
-                  <span>Print / Save</span>
+                  <Download className="w-4 h-4" aria-hidden="true" />
+                  <span>Download</span>
                 </button>
               </div>
             </div>

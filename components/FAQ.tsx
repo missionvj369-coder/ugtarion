@@ -259,14 +259,14 @@ const FAQ: React.FC = () => {
           )}
         </div>
 
-        {/* Contact CTA */}
+          {/* Contact CTA */}
         <div className="mt-12 p-8 bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl text-center">
           <h3 className="text-xl font-semibold text-slate-900 mb-2">Still have questions?</h3>
           <p className="text-slate-600 mb-4">
             Can't find what you're looking for? Our support team is here to help.
           </p>
           <a
-            href="mailto:support@ugtglobal.space"
+            href="mailto:oneness@ugtglobal.space?subject=Support Request - FAQ&body=Hello, I need help with:"
             className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

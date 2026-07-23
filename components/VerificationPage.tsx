@@ -187,21 +187,110 @@ const VerificationPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      // Fetch verification data from the API using the profile endpoint
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/profile/${uid}`);
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Universal ID not found in the registry');
+      // Clean the UID - remove any prefix like UGT- if present
+      const cleanUid = uid.replace(/^UGT-/i, '').trim();
+      
+      // Try multiple API endpoints for verification
+      let profileData = null;
+      const apiBaseUrl = import.meta.env.VITE_API_URL || '';
+      
+      // Try profile endpoint first with both clean and original UID
+      try {
+        let response = await fetch(`${apiBaseUrl}/api/profile/${encodeURIComponent(cleanUid)}`);
+        if (!response.ok) {
+          // Try with original UID if clean UID didn't work
+          response = await fetch(`${apiBaseUrl}/api/profile/${encodeURIComponent(uid)}`);
         }
-        throw new Error('Failed to fetch verification data');
+        if (response.ok) {
+          profileData = await response.json();
+        }
+      } catch (e) {
+        // Continue to next endpoint if this fails
       }
-      const profileData = await response.json();
+      
+      // If profile endpoint didn't work, try verify endpoint
+      if (!profileData) {
+        try {
+          let response = await fetch(`${apiBaseUrl}/api/verify/${encodeURIComponent(cleanUid)}`);
+          if (!response.ok) {
+            // Try with original UID if clean UID didn't work
+            response = await fetch(`${apiBaseUrl}/api/verify/${encodeURIComponent(uid)}`);
+          }
+          if (response.ok) {
+            profileData = await response.json();
+          }
+        } catch (e) {
+          // Continue to next endpoint if this fails
+        }
+      }
+      
+      // If still no data, try direct Supabase query via API
+      if (!profileData) {
+        try {
+          let response = await fetch(`${apiBaseUrl}/api/public/profile/${encodeURIComponent(cleanUid)}`);
+          if (!response.ok) {
+            // Try with original UID if clean UID didn't work
+            response = await fetch(`${apiBaseUrl}/api/public/profile/${encodeURIComponent(uid)}`);
+          }
+          if (response.ok) {
+            profileData = await response.json();
+          }
+        } catch (e) {
+          // Continue to next endpoint if this fails
+        }
+      }
+      
+      // If still no data, try direct Supabase REST API with both formats
+      if (!profileData) {
+        try {
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          if (supabaseUrl && supabaseKey) {
+            // Try with clean UID first
+            let response = await fetch(
+              `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(cleanUid)}&select=*`,
+              {
+                headers: {
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                }
+              }
+            );
+            
+            // If not found, try with original UID (may have UGT- prefix)
+            if (!response.ok || (await response.clone().json()).length === 0) {
+              response = await fetch(
+                `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(uid)}&select=*`,
+                {
+                  headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${supabaseKey}`,
+                  }
+                }
+              );
+            }
+            
+            if (response.ok) {
+              const profiles = await response.json();
+              if (profiles && profiles.length > 0) {
+                profileData = profiles[0];
+              }
+            }
+          }
+        } catch (e) {
+          // Continue to error if this fails
+        }
+      }
+      
+      if (!profileData) {
+        throw new Error('Universal ID not found in the registry. Please check the ID and try again.');
+      }
       
       // Convert API response to VerificationData format
       const verificationData: VerificationData = {
-        universal_id: profileData.id,
-        name: profileData.name,
-        email: profileData.email,
+        universal_id: profileData.id || cleanUid,
+        name: profileData.name || 'Name not available',
+        email: profileData.email || 'Email not available',
         phone: profileData.phone,
         // Geographic details
         nation: profileData.nation,
@@ -210,24 +299,24 @@ const VerificationPage: React.FC = () => {
         city: profileData.city,
         pincode: profileData.pincode,
         // Ranks
-        universe_rank: profileData.universeRank,
-        world_rank: profileData.universeRank, // Using universe as world
-        country_rank: profileData.nationRank,
-        state_rank: profileData.stateRank,
-        district_rank: profileData.districtRank,
-        city_rank: profileData.cityRank,
-        area_rank: profileData.pincodeRank,
-        street_rank: undefined,
-        landmark_rank: undefined,
-        building_rank: undefined,
-        floor_rank: undefined,
-        unit_rank: undefined,
-        created_at: profileData.registeredAt,
+        universe_rank: profileData.universe_rank || profileData.universeRank,
+        world_rank: profileData.universe_rank || profileData.universeRank,
+        country_rank: profileData.country_rank || profileData.nationRank,
+        state_rank: profileData.state_rank || profileData.stateRank,
+        district_rank: profileData.district_rank || profileData.districtRank,
+        city_rank: profileData.city_rank || profileData.cityRank,
+        area_rank: profileData.area_rank || profileData.pincodeRank,
+        street_rank: profileData.street_rank,
+        landmark_rank: profileData.landmark_rank,
+        building_rank: profileData.building_rank,
+        floor_rank: profileData.floor_rank,
+        unit_rank: profileData.unit_rank,
+        created_at: profileData.created_at || profileData.registeredAt,
       };
       
       setData(verificationData);
     } catch (err: any) {
-      setError(err.message || 'Failed to verify Universal ID');
+      setError(err.message || 'Failed to verify Universal ID. The ID format may be invalid or the registry is temporarily unavailable.');
     } finally {
       setLoading(false);
     }
