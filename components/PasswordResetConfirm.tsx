@@ -92,16 +92,16 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
   return (
     <SectionWrapper className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-zinc-950">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center relative">
+        <div className="text-center relative pt-12">
           <button
             onClick={handleBackToLogin}
-            className="absolute left-0 top-0 flex items-center text-zinc-400 hover:text-white transition-colors"
+            className="absolute left-0 top-4 z-10 flex items-center text-zinc-400 hover:text-white transition-colors"
             aria-label="Back to login"
           >
             <ArrowLeftIcon className="w-5 h-5" />
             <span className="ml-1 text-sm">Back to Login</span>
           </button>
-          <h2 className="mt-6 text-3xl font-extrabold text-white">Reset your password</h2>
+          <h2 className="mt-2 text-3xl font-extrabold text-white">Reset your password</h2>
           <p className="mt-2 text-sm text-zinc-400">
             Enter your new password below. Make sure it's strong and unique.
           </p>
