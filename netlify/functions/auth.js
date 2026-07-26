@@ -245,7 +245,9 @@ async function handleForgotPassword(event) {
       // Clean up the URL by removing trailing slashes or /-
       let frontendUrl = process.env.UGT_FRONTEND_URL || process.env.FRONTEND_URL || 'https://ugtglobal.space';
       frontendUrl = frontendUrl.replace(/\/+$/, '').replace(/\/-$/, '');
-      const resetUrl = `${frontendUrl}/password-reset/confirm?token=${resetToken}`;
+      // Properly encode the token for URL query parameter
+      const encodedToken = encodeURIComponent(resetToken);
+      const resetUrl = `${frontendUrl}/password-reset/confirm?token=${encodedToken}`;
       
       // Send password reset email using fallback HTML email (more reliable than Brevo template)
       // The fallback email has the reset link embedded directly in the HTML
