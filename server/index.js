@@ -158,7 +158,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.en
 const AUTH_DOMAIN = process.env.AUTH_DOMAIN || 'auth.ugt.org';
 const PLATFORM_CLIENT_ID = process.env.PLATFORM_CLIENT_ID || 'ugt_portal_client';
 const PLATFORM_CLIENT_SECRET = process.env.PLATFORM_CLIENT_SECRET || 'ugt_portal_secret_change_in_production';
-const PLATFORM_REDIRECT_URI = process.env.PLATFORM_REDIRECT_URI || 'https://universal-guard-trust.netlify.app/auth/callback';
+const PLATFORM_REDIRECT_URI = process.env.PLATFORM_REDIRECT_URI || 'https://ugtglobal.space/auth/callback';
 
 // Create Supabase admin client
 const supabase = createSupabaseAdmin();
@@ -198,7 +198,7 @@ app.use(helmet({
 // ============================================
 // SECURITY: Dynamic CORS Configuration
 // ============================================
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000,https://universal-guard-trust.netlify.app')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000,https://ugtglobal.space')
   .split(',')
   .map(o => o.trim());
 
@@ -551,6 +551,7 @@ async function buildUserInfo(universalId, platformId, scope) {
 
 function corsHeaders(origin) {
   const allowedOrigins = [
+    'https://ugtglobal.space',
     'https://universal-guard-trust.netlify.app',
     'http://localhost:5173',
     'http://localhost:3000',
@@ -1048,8 +1049,8 @@ app.post('/auth/password/reset-request', async (req, res) => {
         // Don't reveal the error to the user
       } else {
         // Build reset URL
-        const baseUrl = redirect_url || process.env.FRONTEND_URL || 'http://localhost:5173';
-        const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+        const baseUrl = redirect_url || process.env.UGT_FRONTEND_URL || process.env.FRONTEND_URL || 'https://ugtglobal.space';
+        const resetUrl = `${baseUrl}/password-reset/confirm?token=${resetToken}`;
 
         // Send password reset email via Brevo
         try {

@@ -5,6 +5,7 @@
 [build.environment]
   SECRETS_SCAN_OMIT_PATHS = "scripts/**,scripts/*"
   NODE_OPTIONS = "--max-old-space-size=4096"
+  UGT_FRONTEND_URL = "https://ugtglobal.space"
 
 [dev]
   command = "npm run start:api"

@@ -241,7 +241,8 @@ async function handleForgotPassword(event) {
       }
       
       // Build the reset URL - use query parameter for token
-      const frontendUrl = process.env.FRONTEND_URL || 'https://ugtglobal.space';
+      // Use UGT_FRONTEND_URL if set, otherwise fallback to ugtglobal.space
+      const frontendUrl = process.env.UGT_FRONTEND_URL || process.env.FRONTEND_URL || 'https://ugtglobal.space';
       const resetUrl = `${frontendUrl}/password-reset/confirm?token=${resetToken}`;
       
       // Send password reset email using fallback HTML email (more reliable than Brevo template)
