@@ -438,7 +438,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.en
 const AUTH_DOMAIN = process.env.AUTH_DOMAIN || 'auth.ugt.org';
 const PLATFORM_CLIENT_ID = process.env.PLATFORM_CLIENT_ID || 'ugt_portal_client';
 const PLATFORM_CLIENT_SECRET = process.env.PLATFORM_CLIENT_SECRET || 'ugt_portal_secret_change_in_production';
-const PLATFORM_REDIRECT_URI = process.env.PLATFORM_REDIRECT_URI || 'https://universal-guard-trust.netlify.app/auth/callback';
+const PLATFORM_REDIRECT_URI = process.env.PLATFORM_REDIRECT_URI || 'https://ugtglobal.space/auth/callback';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Missing Supabase configuration');

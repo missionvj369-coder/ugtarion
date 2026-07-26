@@ -21,6 +21,23 @@
   to = "/.netlify/functions/auth/:splat"
   status = 200
 
+# Password reset routes - preserve query params for token
+[[redirects]]
+  from = "/password-reset"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/password-reset/*"
+  to = "/index.html"
+  status = 200
+
+# Auth routes
+[[redirects]]
+  from = "/verify/*"
+  to = "/index.html"
+  status = 200
+
 # SPA Fallback - must be last redirect
 # This handles all client-side routes (password-reset, verify, etc.)
 [[redirects]]
