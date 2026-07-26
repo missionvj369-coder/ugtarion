@@ -244,20 +244,14 @@ async function handleForgotPassword(event) {
       const frontendUrl = process.env.FRONTEND_URL || 'https://ugtglobal.space';
       const resetUrl = `${frontendUrl}/password-reset/confirm?token=${resetToken}`;
       
-      // Send password reset email via Brevo with fallback to raw HTML email
+      // Send password reset email using fallback HTML email (more reliable than Brevo template)
+      // The fallback email has the reset link embedded directly in the HTML
       try {
-        await sendPasswordResetEmail(userEmail, resetUrl, userName);
+        await sendFallbackPasswordResetEmail(userEmail, resetUrl, userName);
         console.log(`Password reset email sent to ${userEmail}`);
       } catch (emailError) {
-        console.error('Failed to send password reset email via Brevo template, trying fallback:', emailError);
-        // Fallback: Send raw HTML email directly
-        try {
-          await sendFallbackPasswordResetEmail(userEmail, resetUrl, userName);
-          console.log(`Password reset email (fallback) sent to ${userEmail}`);
-        } catch (fallbackError) {
-          console.error('Failed to send fallback email:', fallbackError);
-          // Don't fail the request if email fails - log and continue
-        }
+        console.error('Failed to send password reset email:', emailError);
+        // Don't fail the request if email fails - log and continue
       }
     }
     
