@@ -16,7 +16,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { SignJWT, jwtVerify, importPKCS8, importSPKI, generateKeyPair, exportPKCS8, exportSPKI } from 'jose';
 import { randomBytes, createHash } from 'crypto';
-import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from './brevo-email.js';
+import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail, sendFallbackPasswordResetEmail } from './brevo-email.js';
 
 // ============================================
 // Password Authentication Handlers
@@ -244,14 +244,20 @@ async function handleForgotPassword(event) {
       const frontendUrl = process.env.FRONTEND_URL || 'https://ugtglobal.space';
       const resetUrl = `${frontendUrl}/password-reset/confirm?token=${resetToken}`;
       
-      // Send password reset email via Brevo
+      // Send password reset email via Brevo with fallback to raw HTML email
       try {
         await sendPasswordResetEmail(userEmail, resetUrl, userName);
         console.log(`Password reset email sent to ${userEmail}`);
       } catch (emailError) {
-        console.error('Failed to send password reset email:', emailError);
-        // Don't fail the request if email fails - log and continue
-        // In production, you might want to queue this for retry
+        console.error('Failed to send password reset email via Brevo template, trying fallback:', emailError);
+        // Fallback: Send raw HTML email directly
+        try {
+          await sendFallbackPasswordResetEmail(userEmail, resetUrl, userName);
+          console.log(`Password reset email (fallback) sent to ${userEmail}`);
+        } catch (fallbackError) {
+          console.error('Failed to send fallback email:', fallbackError);
+          // Don't fail the request if email fails - log and continue
+        }
       }
     }
     
