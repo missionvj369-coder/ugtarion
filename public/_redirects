@@ -1,16 +1,16 @@
 # Netlify SPA Redirects for Universal Guard Trust
 # This file handles client-side routing for the React app
 
-# SPA fallback - all routes except API and static files go to index.html
-/*    /index.html   200
-
-# Password reset routes - use query parameter format
+# Password reset routes - MUST be before the catch-all to preserve query params
 /password-reset              /index.html   200
 /password-reset/confirm      /index.html   200
 
 # Auth routes
-/auth/callback     /index.html   200
-/verify/*          /index.html   200
+/auth/callback               /index.html   200
+/verify/*                    /index.html   200
 
 # API proxy (if needed)
-/api/*             https://api.ugtglobal.space/:splat  200
+# /api/*                     https://api.ugtglobal.space/:splat  200
+
+# SPA fallback - all routes except API and static files go to index.html
+/*                           /index.html   200
