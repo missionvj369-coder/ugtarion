@@ -28,9 +28,6 @@ const LazyVerificationPage = lazy(() => import('./components/VerificationPage'))
 const LazyPasswordResetRequest = lazy(() => 
   import('./components/PasswordResetRequest').then(m => ({ default: m.PasswordResetRequest }))
 );
-const LazyPasswordResetConfirm = lazy(() => 
-  import('./components/PasswordResetConfirm').then(m => ({ default: m.PasswordResetConfirm }))
-);
 
 // Loading fallback component
 const PageLoader: React.FC = () => (
@@ -99,7 +96,7 @@ const App: React.FC = () => {
                 <Route path="/verify/:uid" element={<LazyVerificationPage />} />
                 <Route path="/auth/callback" element={<LazyVerificationPage />} />
                 <Route path="/password-reset" element={<LazyPasswordResetRequest onBackToLogin={() => window.history.back()} />} />
-                <Route path="/password-reset/confirm" element={<LazyPasswordResetConfirm onBackToLogin={() => window.history.back()} />} />
+                <Route path="/password-reset/confirm" element={<PasswordResetConfirm onBackToLogin={() => window.history.back()} />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/faq" element={<FAQ />} />
