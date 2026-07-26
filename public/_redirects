@@ -7,7 +7,7 @@
 
 # Password reset routes - MUST be before the catch-all to preserve query params
 # Order matters: more specific paths first, then wildcards
-/password-reset/confirm      /index.html   200
+/password-reset/confirm      /index.html   200!
 /password-reset              /index.html   200
 
 # SPA fallback - all routes except API and static files go to index.html
