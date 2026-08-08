@@ -10,9 +10,9 @@ interface PasswordResetConfirmProps {
 
 export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProps) {
   const [searchParams] = useSearchParams();
-  // Decode the token from URL (it was URL-encoded when passed as query param)
-  const rawToken = searchParams.get('token');
-  const token = rawToken ? decodeURIComponent(rawToken) : null;
+  // Get token from URL - searchParams.get() already decodes the URL parameter
+  // No need for decodeURIComponent as the token is already properly decoded
+  const token = searchParams.get('token');
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

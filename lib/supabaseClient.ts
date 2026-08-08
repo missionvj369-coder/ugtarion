@@ -96,9 +96,34 @@ export const registerUserInSupabase = async (data: {
     throw new Error('Registration failed - no data returned');
   }
 
-  const profile = result[0];
-  setActiveSupabaseUserId(profile.universal_id);
-  return buildRecord(profile, profile);
+  const registrationResult = result[0];
+  const universalId = registrationResult.universal_id;
+  setActiveSupabaseUserId(universalId);
+
+  // Use the atomic login RPC to fetch the fully computed profile and rankings.
+  // This is the most reliable way to get the "gold standard" record that includes
+  // the calculated ranks immediately after creation.
+  // To ensure ranks are fully calculated and indexed after the insert, 
+  // we fetch the profile and standings separately, mirroring the 
+  // reliable logic used in getActiveSupabaseUser.
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('universal_id', universalId)
+    .single();
+
+  if (profileError || !profile) {
+    throw new Error('Registration successful, but failed to retrieve the profile.');
+  }
+
+  const { data: standings, error: standingsError } = await supabase
+    .rpc('calculate_universal_standings', { target_uid: universalId });
+
+  if (standingsError || !standings || standings.length === 0) {
+    throw new Error('Registration successful, but failed to calculate initial rankings.');
+  }
+
+  return buildRecord(profile, standings[0]);
 };
 
 /**
@@ -408,9 +433,31 @@ export const registerUserWithPassword = async (data: {
     throw new Error('Registration failed - no data returned');
   }
 
-  const profile = result[0];
-  setActiveSupabaseUserId(profile.universal_id);
-  return buildRecord(profile, profile);
+  const registrationResult = result[0];
+  const universalId = registrationResult.universal_id;
+  setActiveSupabaseUserId(universalId);
+
+  // To ensure ranks are fully calculated and indexed after the insert, 
+  // we fetch the profile and standings separately, mirroring the 
+  // reliable logic used in getActiveSupabaseUser.
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('universal_id', universalId)
+    .single();
+
+  if (profileError || !profile) {
+    throw new Error('Registration successful, but failed to retrieve the profile.');
+  }
+
+  const { data: standings, error: standingsError } = await supabase
+    .rpc('calculate_universal_standings', { target_uid: universalId });
+
+  if (standingsError || !standings || standings.length === 0) {
+    throw new Error('Registration successful, but failed to calculate initial rankings.');
+  }
+
+  return buildRecord(profile, standings[0]);
 };
 
 /**

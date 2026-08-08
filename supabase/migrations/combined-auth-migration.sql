@@ -69,9 +69,11 @@ RETURNS TEXT LANGUAGE sql VOLATILE AS $$
 $$;
 
 -- Function to hash token (for secure token storage)
+-- Using convert_to ensures consistent UTF-8 encoding across different PostgreSQL configurations
+-- This fixes token validation issues where tokens might not match due to encoding differences
 CREATE OR REPLACE FUNCTION public.hash_token(token TEXT)
 RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
-    SELECT encode(sha256(token::bytea), 'hex');
+    SELECT encode(sha256(convert_to(token, 'utf8')::bytea), 'hex');
 $$;
 
 -- ============================================
