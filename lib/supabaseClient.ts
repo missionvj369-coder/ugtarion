@@ -435,29 +435,44 @@ export const registerUserWithPassword = async (data: {
 
   const registrationResult = result[0];
   const universalId = registrationResult.universal_id;
+  console.log('[Registration] RPC success. Generated Universal ID:', universalId);
   setActiveSupabaseUserId(universalId);
 
   // To ensure ranks are fully calculated and indexed after the insert, 
   // we fetch the profile and standings separately, mirroring the 
   // reliable logic used in getActiveSupabaseUser.
+  console.log('[Registration] Fetching profile for:', universalId);
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('universal_id', universalId)
     .single();
 
-  if (profileError || !profile) {
-    throw new Error('Registration successful, but failed to retrieve the profile.');
+  if (profileError || !profile || !profile.universal_id) {
+    console.error('[Registration] Profile fetch failed or returned empty:', profileError, profile);
+    throw new Error('Registration successful, but the system could not retrieve your profile details. Please try logging in.');
   }
+  console.log('[Registration] Profile retrieved successfully:', profile.universal_id);
 
+  console.log('[Registration] Calculating standings for:', universalId);
   const { data: standings, error: standingsError } = await supabase
     .rpc('calculate_universal_standings', { target_uid: universalId });
 
-  if (standingsError || !standings || standings.length === 0) {
-    throw new Error('Registration successful, but failed to calculate initial rankings.');
+  if (standingsError || !standings || standings.length === 0 || !standings[0].global_order) {
+    console.error('[Registration] Standings calculation failed or returned empty:', standingsError, standings);
+    throw new Error('Registration successful, but your planetary rankings could not be calculated. Please try logging in.');
+  }
+  console.log('[Registration] Standings retrieved successfully:', standings[0]);
+
+  const record = buildRecord(profile, standings[0]);
+  
+  // Final safety check: ensure the record is not empty
+  if (!record.id || !record.name) {
+    console.error('[Registration] buildRecord produced an invalid record:', record);
+    throw new Error('Registration successful, but the ID card data is incomplete. Please try logging in.');
   }
 
-  return buildRecord(profile, standings[0]);
+  return record;
 };
 
 /**
