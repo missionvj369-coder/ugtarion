@@ -13,17 +13,15 @@ if (!SUPABASE_SERVICE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-async function checkVerifyPassword() {
-  const { data, error } = await supabase.rpc('verify_password', {
-    password: 'TestPass123!',
-    password_hash: '$2a$12$P40I7XjmAlgmqc9dq7RNOOYaKZtaLVthxpijOU03n6cEo0WBJkj4e'
-  });
+async function checkRLS() {
+  const sql = "SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check FROM pg_policies WHERE tablename = 'profiles';";
+  const { data, error } = await supabase.rpc('exec_sql', { sql: sql });
   
   if (error) {
     console.log('Error:', error.message);
   } else {
-    console.log('Verify result:', data);
+    console.log('RLS Policies:', JSON.stringify(data, null, 2));
   }
 }
 
-checkVerifyPassword();
+checkRLS();

@@ -13,17 +13,16 @@ if (!SUPABASE_SERVICE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-async function checkVerifyPassword() {
-  const { data, error } = await supabase.rpc('verify_password', {
-    password: 'TestPass123!',
-    password_hash: '$2a$12$P40I7XjmAlgmqc9dq7RNOOYaKZtaLVthxpijOU03n6cEo0WBJkj4e'
+async function checkFunction() {
+  const { data, error } = await supabase.rpc('exec_sql', {
+    sql: "SELECT routine_definition FROM information_schema.routines WHERE routine_name = 'register_user_with_password' AND routine_schema = 'public'"
   });
   
   if (error) {
     console.log('Error:', error.message);
   } else {
-    console.log('Verify result:', data);
+    console.log('Function definition:', JSON.stringify(data, null, 2));
   }
 }
 
-checkVerifyPassword();
+checkFunction();
