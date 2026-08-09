@@ -396,6 +396,8 @@ export const checkRateLimit = async (
 
 /**
  * Register a new user with password
+ * Uses the updated RPC function that returns the full profile directly,
+ * eliminating the race condition where the second query could fail due to RLS.
  */
 export const registerUserWithPassword = async (data: {
   name: string;
@@ -434,25 +436,25 @@ export const registerUserWithPassword = async (data: {
   }
 
   const registrationResult = result[0];
+  
+  // Check success flag from the database function
+  if (!registrationResult.success) {
+    throw new Error(registrationResult.message || 'Registration failed');
+  }
+
   const universalId = registrationResult.universal_id;
   console.log('[Registration] RPC success. Generated Universal ID:', universalId);
   setActiveSupabaseUserId(universalId);
 
-  // To ensure ranks are fully calculated and indexed after the insert, 
-  // we fetch the profile and standings separately, mirroring the 
-  // reliable logic used in getActiveSupabaseUser.
-  console.log('[Registration] Fetching profile for:', universalId);
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('universal_id', universalId)
-    .single();
-
-  if (profileError || !profile || !profile.universal_id) {
-    console.error('[Registration] Profile fetch failed or returned empty:', profileError, profile);
+  // Use the profile returned directly from the RPC function
+  // This eliminates the race condition where a second query could fail due to RLS
+  const profile = registrationResult.profile;
+  
+  if (!profile || !profile.universal_id) {
+    console.error('[Registration] Profile not returned from RPC:', registrationResult);
     throw new Error('Registration successful, but the system could not retrieve your profile details. Please try logging in.');
   }
-  console.log('[Registration] Profile retrieved successfully:', profile.universal_id);
+  console.log('[Registration] Profile retrieved from RPC:', profile.universal_id);
 
   console.log('[Registration] Calculating standings for:', universalId);
   const { data: standings, error: standingsError } = await supabase
