@@ -63,6 +63,8 @@ import type { UniversalIdRecord } from '../lib/apiClient';
 import SectionWrapper from './SectionWrapper';
 import { createUGTAuthClient, UGTAuthClient } from '../lib/ugt-auth-client';
 import { registerUserWithPassword, loginWithPassword, signOutSupabase, requestPasswordReset, verifyPasswordResetToken, resetPassword } from '../lib/supabaseClient';
+import { QRCodeSVG } from 'qrcode.react';
+import { UgtLogoIcon, WhatsappIcon, LinkedInIcon, XIcon, FacebookIcon, InstagramIcon } from './icons';
 
 // Retry configuration
 const MAX_RETRIES = 3;
@@ -158,11 +160,9 @@ interface UniversalIdPortalProps {
     const cardRef = useRef<HTMLDivElement>(null);
     
     // Generate QR code data URL
-    const qrDataUrl = useMemo(() => {
+    const qrText = useMemo(() => {
       if (!showQR) return '';
-      const qrText = `${window.location.origin}/verify/${user.id}`;
-      // Using a simple QR code service - in production, use a proper QR library
-      return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(qrText)}&margin=2&color=0f0f1a&bgcolor=transparent`;
+      return `${window.location.origin}/verify/${user.id}`;
     }, [user.id, showQR]);
 
     const formatDate = (dateStr: string) => {
@@ -256,7 +256,7 @@ interface UniversalIdPortalProps {
           <div className="flex items-center gap-2">
             <div className="relative p-2 rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_2px_8px_rgba(0,0,0,0.3)]">
               <div className="relative z-10">
-                <Globe className="w-5 h-5 text-indigo-300 drop-shadow-[0_0_4px_rgba(99,102,241,0.4)]" aria-hidden="true" />
+                <UgtLogoIcon className="w-5 h-5 text-indigo-300 drop-shadow-[0_0_4px_rgba(99,102,241,0.4)]" aria-hidden="true" />
               </div>
               {/* Badge glow */}
               <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/10 opacity-50 blur-sm -z-10" />
@@ -268,16 +268,17 @@ interface UniversalIdPortalProps {
           </div>
           
           {/* QR Code - Premium placement */}
-          {showQR && (
+          {showQR && qrText && (
             <div className="relative">
               <div className="absolute -inset-1.5 rounded-lg bg-gradient-to-br from-indigo-500/30 via-purple-500/20 to-amber-500/30 blur-sm opacity-50" aria-hidden="true" />
               <div className="relative p-1.5 rounded-lg bg-zinc-900/90 border border-zinc-700/50 backdrop-blur-sm shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
-                <img 
-                  src={qrDataUrl} 
-                  alt={`Verification QR for ${user.id}`}
+                <QRCodeSVG 
+                  value={qrText}
+                  size={48}
+                  bgColor="transparent"
+                  fgColor="#ffffff"
+                  level="M"
                   className="w-12 h-12 rounded-sm"
-                  loading="lazy"
-                  decoding="async"
                 />
                 <div className="absolute inset-0 rounded-lg border border-zinc-600/30 pointer-events-none" />
               </div>
@@ -326,13 +327,6 @@ interface UniversalIdPortalProps {
             <p className="text-lg font-semibold text-zinc-100 truncate max-w-full" title={user.name}>{user.name}</p>
           </div>
           
-          {/* Date of Birth */}
-          <div className="min-w-0 relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" aria-hidden="true" />
-            <p className="text-[6px] uppercase tracking-widest text-zinc-500 font-mono mb-1">Date of Birth</p>
-            <p className="text-sm font-medium text-zinc-300 font-mono" title={user.dob}>{formatDate(user.dob)}</p>
-          </div>
-          
           {/* Registration Date */}
           <div className="min-w-0 relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" aria-hidden="true" />
@@ -345,6 +339,13 @@ interface UniversalIdPortalProps {
             <div className="absolute inset-0 bg-gradient-to-l from-indigo-500/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" aria-hidden="true" />
             <p className="text-[6px] uppercase tracking-widest text-zinc-500 font-mono mb-1">Universe Rank</p>
             <p className="text-sm font-bold text-indigo-300 font-mono">{formatRank(user.universeRank)}</p>
+          </div>
+          
+          {/* Caption */}
+          <div className="col-span-2 text-center mt-1">
+            <p className="text-[6px] uppercase tracking-[0.2em] text-zinc-500 font-light">
+              Transforming Lives · Shaping Future
+            </p>
           </div>
         </div>
 
@@ -390,7 +391,7 @@ interface UniversalIdPortalProps {
           {/* Verification footer */}
           <div className="flex items-center justify-between text-[6px] text-zinc-500 font-mono print:hidden">
             <span>SECURE • VERIFIED • SOVEREIGN</span>
-            <span>UGT-{new Date().getFullYear()}</span>
+            <span>ugtglobal.space</span>
           </div>
         </div>
       </div>
@@ -451,6 +452,110 @@ const RankDetailCard = React.memo(({
 ));
 
 RankDetailCard.displayName = 'RankDetailCard';
+
+// Animated Counter Component with Human Oneness Icon
+const AnimatedRegistryCounter = React.memo(({ target }: { target: number }) => {
+  const [displayCount, setDisplayCount] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const counterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!counterRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          const duration = 2000;
+          const startTime = performance.now();
+          
+          const animateCount = (currentTime: number) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out cubic
+            const easedProgress = 1 - Math.pow(1 - progress, 3);
+            const currentValue = Math.round(target * easedProgress);
+            setDisplayCount(currentValue);
+            
+            if (progress < 1) {
+              requestAnimationFrame(animateCount);
+            } else {
+              setDisplayCount(target);
+            }
+          };
+          
+          requestAnimationFrame(animateCount);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    
+    observer.observe(counterRef.current);
+    return () => observer.disconnect();
+  }, [target, hasAnimated]);
+
+  // Human Oneness Animated Icon
+  const HumanOnenessIcon = () => (
+    <svg 
+      className="w-12 h-12 text-indigo-300 animate-pulse-slow" 
+      viewBox="0 0 48 48" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      {/* Central circle representing unity */}
+      <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+      {/* Human figures around the circle in oneness */}
+      <g opacity="0.9">
+        {/* Head 1 */}
+        <circle cx="24" cy="15" r="3.5" fill="currentColor" />
+        {/* Body 1 */}
+        <path d="M19 28 C19 23 29 23 29 28" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        {/* Head 2 */}
+        <circle cx="13" cy="24" r="3.5" fill="currentColor" />
+        {/* Body 2 */}
+        <path d="M8 37 C8 32 18 32 18 37" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        {/* Head 3 */}
+        <circle cx="35" cy="24" r="3.5" fill="currentColor" />
+        {/* Body 3 */}
+        <path d="M30 37 C30 32 40 32 40 37" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        {/* Connecting lines of oneness */}
+        <path d="M20 17 L16 22" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+        <path d="M28 17 L32 22" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+        <path d="M24 19 L24 22" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+      </g>
+      {/* Orbiting dots for animation feel */}
+      <circle cx="24" cy="6" r="1.2" fill="currentColor" opacity="0.6">
+        <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="42" cy="24" r="1.2" fill="currentColor" opacity="0.6">
+        <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="6" cy="24" r="1.2" fill="currentColor" opacity="0.6">
+        <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  );
+
+  return (
+    <div ref={counterRef} className="flex items-center gap-4">
+      <HumanOnenessIcon />
+      <div className="flex flex-col">
+        <span className="text-zinc-500 text-[10px] uppercase tracking-widest font-mono font-semibold">
+          Total Registered Guardians
+        </span>
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl sm:text-4xl font-mono font-bold tracking-tight text-indigo-300 tabular-nums">
+            {displayCount.toLocaleString()}
+          </span>
+          <span className="text-zinc-500 text-xs font-light">verified lives</span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+AnimatedRegistryCounter.displayName = 'AnimatedRegistryCounter';
 
 const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   isModal = false,
@@ -753,7 +858,16 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     if (!currentUser) return;
     
     try {
-      const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/verify/${currentUser.id}`)}&margin=2&color=0f0f1a&bgcolor=transparent`;
+      const verifyUrl = `${window.location.origin}/verify/${currentUser.id}`;
+      // Use QRCode API to generate the QR image reliably  
+      const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(verifyUrl)}&margin=2&color=ffffff&bgcolor=0f0f1a`;
+      
+      // UGT Logo as inline SVG (icon only - no text letters)
+      const logoIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="2.5" stroke="#a5b4fc" stroke-width="1.5"/>
+        <path d="M 22 12 A 10 10 0 0 1 7 20.66" stroke="#a5b4fc" stroke-width="1.5" fill="none"/>
+        <path d="M 2 12 A 10 10 0 0 1 17 3.34" stroke="#a5b4fc" stroke-width="1.5" fill="none"/>
+      </svg>`;
       
       const htmlContent = `<!DOCTYPE html>
 <html>
@@ -761,7 +875,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   <title>Universal ID Card - ${currentUser.id}</title>
   <style>
     @page { size: 85.60mm 53.98mm; margin: 0; }
-    body { margin: 0; padding: 0; background: #09090b; }
+    body { margin: 0; padding: 0; background: #09090b; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
     .card {
       width: 340px;
       height: 214px;
@@ -791,6 +905,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     .detail-label { font-size: 6px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; }
     .detail-value { font-size: 10px; color: #d4d4d8; font-weight: 500; }
     .name-value { font-size: 14px; color: #f4f4f5; font-weight: 600; grid-column: span 2; }
+    .caption { grid-column: span 2; text-align: center; font-size: 7px; color: #71717a; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
     .nation-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #3f3f46; }
     .nation-label { font-size: 6px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; }
     .nation-value { font-size: 14px; color: #f4f4f5; font-weight: 600; }
@@ -802,7 +917,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   <div class="card">
     <div class="header">
       <div class="logo">
-        <div class="logo-icon">🌐</div>
+        <div class="logo-icon">${logoIconSvg}</div>
         <div>
           <div class="logo-text">UNIVERSAL ID CARD</div>
           <div class="logo-sub">Universal Guard Trust</div>
@@ -821,10 +936,6 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     <div class="details">
       <div class="name-value">${currentUser.name}</div>
       <div>
-        <div class="detail-label">Date of Birth</div>
-        <div class="detail-value">${new Date(currentUser.dob).toLocaleDateString()}</div>
-      </div>
-      <div>
         <div class="detail-label">Registered</div>
         <div class="detail-value">${new Date(currentUser.registeredAt).toLocaleDateString()}</div>
       </div>
@@ -832,6 +943,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
         <div class="detail-label">Universe Rank</div>
         <div class="detail-value" style="color: #a5b4fc;">#${currentUser.universeRank?.toLocaleString() || 'N/A'}</div>
       </div>
+      <div class="caption">Transforming Lives · Shaping Future</div>
     </div>
     <div class="nation-section">
       <div class="nation-label">🌍 Nation Alignment</div>
@@ -839,9 +951,9 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     </div>
     <div class="footer">
       <span>SECURE • VERIFIED • SOVEREIGN</span>
-      <span>UGT-${new Date().getFullYear()}</span>
+      <span>ugtglobal.space</span>
     </div>
-    <div class="verification">${window.location.origin}/verify/${currentUser.id}</div>
+    <div class="verification">${verifyUrl}</div>
   </div>
 </body>
 </html>`;
@@ -1508,6 +1620,90 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                   <span>Download</span>
                 </button>
               </div>
+
+              {/* Share Section with Social Media */}
+              <div className="pt-2">
+                <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold font-mono text-center mb-3">
+                  <Share2 className="w-3.5 h-3.5 inline-block mr-1" aria-hidden="true" />
+                  Share Your Universal ID
+                </p>
+                
+                {/* Primary Share Button (Native / Copy Link) */}
+                <button
+                  onClick={() => {
+                    if (!currentUser) return;
+                    const shareText = `I am proud to serve as a Universal Guardian with the Universal Guardian Trust (UGT). My Universal ID is ${currentUser.id}. Join me in transforming lives and shaping a better future. https://ugtglobal.space/`;
+                    const shareUrl = `${window.location.origin}/verify/${currentUser.id}`;
+                    if (navigator.share) {
+                      navigator.share({ title: 'My Universal ID', text: shareText, url: shareUrl }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+                      setSuccess('Share link copied to clipboard!');
+                    }
+                  }}
+                  className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-[10px] tracking-wider uppercase rounded-xl transition-all flex items-center justify-center gap-2 mb-3"
+                  aria-label="Share ID card"
+                >
+                  <Share2 className="w-4 h-4" aria-hidden="true" />
+                  <span>Share ID Card</span>
+                </button>
+
+                {/* Social Media Share Icons */}
+                {currentUser && (
+                  <div className="grid grid-cols-5 gap-2">
+                    {/* WhatsApp */}
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`I am proud to serve as a Universal Guardian with the Universal Guardian Trust (UGT). My Universal ID is ${currentUser.id}. Join me in transforming lives and shaping a better future. https://ugtglobal.space/`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all"
+                      aria-label="Share on WhatsApp"
+                    >
+                      <WhatsappIcon className="w-4 h-4 text-emerald-400" />
+                    </a>
+                    {/* X (Twitter) */}
+                    <a
+                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I am proud to serve as a Universal Guardian with the Universal Guardian Trust (UGT). My Universal ID is ${currentUser.id}. Join me in transforming lives and shaping a better future. https://ugtglobal.space/`)}&url=${encodeURIComponent(`${window.location.origin}/verify/${currentUser.id}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center p-2.5 rounded-xl bg-zinc-700/20 hover:bg-zinc-700/30 border border-zinc-600/20 transition-all"
+                      aria-label="Share on X"
+                    >
+                      <XIcon className="w-4 h-4 text-zinc-300" />
+                    </a>
+                    {/* Facebook */}
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/verify/${currentUser.id}`)}&quote=${encodeURIComponent(`I am proud to serve as a Universal Guardian with the Universal Guardian Trust (UGT). My Universal ID is ${currentUser.id}. Join me in transforming lives and shaping a better future. https://ugtglobal.space/`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center p-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all"
+                      aria-label="Share on Facebook"
+                    >
+                      <FacebookIcon className="w-4 h-4 text-blue-400" />
+                    </a>
+                    {/* LinkedIn */}
+                    <a
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/verify/${currentUser.id}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center p-2.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 transition-all"
+                      aria-label="Share on LinkedIn"
+                    >
+                      <LinkedInIcon className="w-4 h-4 text-sky-400" />
+                    </a>
+                    {/* Instagram */}
+                    <a
+                      href={`https://www.instagram.com/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center p-2.5 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 transition-all"
+                      aria-label="Share on Instagram"
+                    >
+                      <InstagramIcon className="w-4 h-4 text-pink-400" />
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1632,13 +1828,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
             </div>
 
             <div className="pt-8 md:pt-0 mt-8 border-t border-zinc-800/50 md:border-t-0">
-              <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-mono font-semibold">Total Registered Guardians</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl sm:text-4xl font-mono font-bold tracking-tight text-indigo-300">
-                  {totalRegistrations.toLocaleString()}
-                </span>
-                <span className="text-zinc-500 text-xs font-light">verified lives</span>
-              </div>
+              <AnimatedRegistryCounter target={totalRegistrations} />
             </div>
           </div>
 

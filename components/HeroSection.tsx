@@ -23,7 +23,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOpenIdModal }) => {
         <p className="mt-8 text-lg sm:text-xl text-zinc-650 max-w-4xl mx-auto font-light leading-relaxed">
           {HERO_DATA.subheadline}
         </p>
-        <div className="mt-12">
+        <div className="mt-16">
           <button
             onClick={onOpenIdModal}
             className="inline-block bg-zinc-900 text-white font-medium px-10 py-4 text-base sm:text-lg tracking-wider uppercase rounded-full transition-transform hover:scale-105 shadow-lg shadow-zinc-900/10 active:scale-95"

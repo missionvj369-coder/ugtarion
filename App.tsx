@@ -1,19 +1,8 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
-import HeroSection from './components/HeroSection';
-import GratitudeSection from './components/GratitudeSection';
-import EssenceSection from './components/EssenceSection';
-import MissionSection from './components/MissionSection';
-import InitiativesSection from './components/InitiativesSection';
-import CollaborationSection from './components/CollaborationSection';
-import UniversalIdPortal from './components/UniversalIdPortal';
-import FounderSection from './components/FounderSection';
-import CoFounderSection from './components/CoFounderSection';
-import SupportersSection from './components/SupportersSection';
 import Footer from './components/ContactSection';
-import FadeIn from './components/FadeIn';
-import VerificationPage from './components/VerificationPage';
+import UniversalIdPortal from './components/UniversalIdPortal';
 import { PasswordResetRequest } from './components/PasswordResetRequest';
 import { PasswordResetConfirm } from './components/PasswordResetConfirm';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -22,6 +11,17 @@ import FAQ from './components/FAQ';
 import { createUGTAuthClient, UGTAuthClient } from './lib/ugt-auth-client';
 import ErrorBoundary, { setupGlobalErrorHandlers } from './components/ErrorBoundary';
 import HealthCheck from './components/HealthCheck';
+import HomePage from './pages/HomePage';
+import VisionPage from './pages/VisionPage';
+import BlueprintPage from './pages/BlueprintPage';
+import HumanPage from './pages/HumanPage';
+import ConsciousnessPage from './pages/ConsciousnessPage';
+import IntelligencePage from './pages/IntelligencePage';
+import CivilizationPage from './pages/CivilizationPage';
+import CreationPage from './pages/CreationPage';
+import ProjectsPage from './pages/ProjectsPage';
+import JoinPage from './pages/JoinPage';
+import SystemsPage from './pages/SystemsPage';
 
 // Lazy load heavy components for performance
 const LazyVerificationPage = lazy(() => import('./components/VerificationPage'));
@@ -70,6 +70,13 @@ const App: React.FC = () => {
     }
   }, [authClient]);
 
+  const withFooter = (page: React.ReactNode) => (
+    <>
+      {page}
+      <Footer />
+    </>
+  );
+
   return (
     <ErrorBoundary>
       <BrowserRouter>
@@ -80,19 +87,20 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={(
                   <>
-                    <HeroSection onOpenIdModal={openIdModal} />
-                    <FadeIn><GratitudeSection /></FadeIn>
-                    <EssenceSection />
-                    <MissionSection />
-                    <InitiativesSection />
-                    <CollaborationSection />
-                    <FadeIn><UniversalIdPortal authClient={authClient} /></FadeIn>
-                    <FadeIn><FounderSection /></FadeIn>
-                    <FadeIn><CoFounderSection /></FadeIn>
-                    <FadeIn><SupportersSection /></FadeIn>
+                    <HomePage onOpenIdModal={openIdModal} />
                     <Footer />
                   </>
                 )} />
+                <Route path="/vision" element={withFooter(<VisionPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/blueprint" element={withFooter(<BlueprintPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/systems" element={withFooter(<SystemsPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/human" element={withFooter(<HumanPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/consciousness" element={withFooter(<ConsciousnessPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/intelligence" element={withFooter(<IntelligencePage onOpenIdModal={openIdModal} />)} />
+                <Route path="/civilization" element={withFooter(<CivilizationPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/creation" element={withFooter(<CreationPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/projects" element={withFooter(<ProjectsPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/join" element={withFooter(<JoinPage onOpenIdModal={openIdModal} />)} />
                 <Route path="/verify/:uid" element={<LazyVerificationPage />} />
                 <Route path="/auth/callback" element={<LazyVerificationPage />} />
                 <Route path="/password-reset" element={<LazyPasswordResetRequest onBackToLogin={() => window.history.back()} />} />
