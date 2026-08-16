@@ -30,6 +30,12 @@ const intelligences = [
   { title: 'Artificial Intelligence', description: 'Analysis, synthesis, simulation and discovery at scale.' },
   { title: 'Scientific Intelligence', description: 'Evidence, measurement, experimentation and verification.' },
   { title: 'Collective Intelligence', description: 'Distributed experience, local knowledge and collaboration.' },
+  { title: 'Ecological Intelligence', description: 'Understanding the living systems and biological networks of the planet.' },
+  { title: 'Cultural Intelligence', description: 'The wisdom embedded in diverse human traditions and social expressions.' },
+  { title: 'Historical Intelligence', description: 'Learning from the patterns of the past to navigate the future.' },
+  { title: 'Creative Intelligence', description: 'The ability to imagine and manifest new possibilities and forms.' },
+  { title: 'Systems Intelligence', description: 'Recognizing the interconnectedness and feedback loops of complex wholes.' },
+  { title: 'Technological Intelligence', description: 'The application of tools and methods to extend human capability.' },
 ];
 
 const creationLoop = ['Understand', 'Question', 'Connect', 'Create', 'Test', 'Measure', 'Learn', 'Evolve'];
@@ -40,35 +46,104 @@ const HomePage: React.FC<HomePageProps> = ({ onOpenIdModal }) => {
       <PageHero
         eyebrow="Universal Guard Trust"
         title="What Would Humanity Build If It Finally Worked Together?"
-        subtitle="Humanity already possesses an extraordinary inheritance of knowledge, intelligence, experience and imagination. What is missing is the connection."
+        subtitle="Universal Guard Trust (UGT) is a living framework dedicated to human evolution, human flourishing and the conscious transformation of civilization."
       />
 
       <FadeIn><GratitudeSection /></FadeIn>
 
       <ContentSection
-        eyebrow="One Humanity. Many Systems."
-        title="A Living Framework for a Connected Civilization"
+        eyebrow="Our Core Purpose"
+        title="Contributing to the Conscious Evolution of Humanity"
         center
       >
         <div className="max-w-3xl mx-auto text-center space-y-6">
-          <P>Human life does not exist in separate systems.</P>
           <P>
-            Health touches education.
-            Education touches opportunity.
-            Opportunity touches community.
-            Community touches culture.
-            Culture touches civilization.
-            Civilization touches the planet.
+            UGT exists to contribute to the conscious evolution of humanity and the transformation of civilization.
           </P>
-          <P>UGT brings these relationships into one field of inquiry and creation.</P>
+          <P>
+            Its work explores how humanity can bring together different forms of intelligence, accumulated knowledge, human potential, technology, community and constructive action to create better conditions for life.
+          </P>
+          <P>
+            The objective is not to prescribe a perfect society, but to create a continuously evolving framework through which people can understand, participate, create, learn and contribute to the advancement of humanity.
+          </P>
         </div>
       </ContentSection>
 
-      <ContentSection eyebrow="Core Philosophy" title="From Knowledge to Creation" className="bg-white/40">
-        <FlowDisplay steps={creationLoop} label="Creation Loop" />
-        <div className="mt-12 max-w-3xl mx-auto text-center space-y-4">
-          <P>The purpose is not to declare a final answer for humanity.</P>
-          <P>The purpose is to build a civilization capable of continuously discovering better answers.</P>
+      <ContentSection
+        eyebrow="Integrated Intelligence"
+        title="Bringing Forms of Intelligence into Relationship"
+        className="bg-white/60"
+      >
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <P>
+            UGT recognizes that no single form of intelligence is sufficient. We explore the synergy between complementary forms of knowledge and intelligence to address the complex challenges of our time.
+          </P>
+        </div>
+        <PillarGrid items={intelligences} />
+        <div className="mt-12 text-center">
+          <P className="font-medium text-zinc-900">Together: HI × AI × SI × CI and beyond</P>
+        </div>
+      </ContentSection>
+
+      <ContentSection
+        eyebrow="Human Evolution"
+        title="Beyond Technological Advancement"
+        center
+        className="bg-white/40"
+      >
+        <div className="max-w-3xl mx-auto text-center space-y-6">
+          <P>
+            Human evolution is an ongoing process that extends far beyond the tools we build. It is the expansion of our capacity to exist and relate.
+          </P>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-8">
+            {['Consciousness', 'Knowledge', 'Capability', 'Creativity', 'Cooperation', 'Wisdom', 'Responsibility', 'Compassion', 'Community', 'Civilization'].map((trait) => (
+              <div key={trait} className="p-3 text-sm font-medium text-zinc-600 border border-zinc-200 rounded-lg bg-white">
+                {trait}
+              </div>
+            ))}
+          </div>
+        </div>
+      </ContentSection>
+
+      <ContentSection
+        eyebrow="Civilization Transformation"
+        title="Civilization as an Interconnected System"
+        className="bg-white/80"
+      >
+        <div className="max-w-3xl mx-auto space-y-6">
+          <P>
+            We view civilization not as a collection of isolated institutions or sectors, but as an interconnected system. Improving the human condition requires understanding how these systems interact.
+          </P>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
+            <div className="space-y-2">
+              <h4 className="font-medium text-zinc-900">Foundational Systems</h4>
+              <P className="text-sm">Human life, health, food, water, housing, and environment.</P>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium text-zinc-900">Structural Systems</h4>
+              <P className="text-sm">Education, economy, technology, governance, and culture.</P>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium text-zinc-900">Relational Systems</h4>
+              <P className="text-sm">Community, knowledge, and the legacy left for future generations.</P>
+            </div>
+          </div>
+        </div>
+      </ContentSection>
+
+      <ContentSection
+        eyebrow="The Aspiration"
+        title="Heaven on Earth"
+        center
+        className="bg-gradient-to-b from-white/40 to-white/80"
+      >
+        <div className="max-w-3xl mx-auto text-center space-y-6">
+          <P>
+            UGT presents Heaven on Earth not as a supernatural claim or a declaration that perfection has already been achieved, but as a civilizational direction.
+          </P>
+          <P>
+            It is the aspiration toward the perfection of creation being progressively restored through conscious human participation: reducing unnecessary suffering, strengthening human dignity and capability, restoring relationships with the living world, and expanding access to knowledge and opportunity.
+          </P>
         </div>
       </ContentSection>
 
@@ -76,7 +151,7 @@ const HomePage: React.FC<HomePageProps> = ({ onOpenIdModal }) => {
         eyebrow="The Master Blueprint"
         title="One Architecture. Many Interconnected Systems."
         center
-        className="bg-gradient-to-b from-white/40 to-white/80"
+        className="bg-white/40"
       >
         <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
           {blueprintSystems.map((system) => (
@@ -93,6 +168,14 @@ const HomePage: React.FC<HomePageProps> = ({ onOpenIdModal }) => {
         </div>
       </ContentSection>
 
+      <ContentSection eyebrow="Core Philosophy" title="From Knowledge to Creation" className="bg-white/60">
+        <FlowDisplay steps={creationLoop} label="Creation Loop" />
+        <div className="mt-12 max-w-3xl mx-auto text-center space-y-4">
+          <P>The purpose is not to declare a final answer for humanity.</P>
+          <P>The purpose is to build a civilization capable of continuously discovering better answers.</P>
+        </div>
+      </ContentSection>
+
       <ContentSection
         eyebrow="The Work"
         title="From Ideas to Reality"
@@ -103,14 +186,6 @@ const HomePage: React.FC<HomePageProps> = ({ onOpenIdModal }) => {
         </div>
       </ContentSection>
 
-      <ContentSection eyebrow="The Intelligence of the Whole" title="HI × AI × SI × CI" className="bg-white/60">
-        <PillarGrid items={intelligences} />
-        <div className="mt-12 text-center">
-          <P>Together: HI × AI × SI × CI</P>
-        </div>
-      </ContentSection>
-
-      {/* Centered CTA between white and black sections */}
       <section className="py-20 sm:py-24 bg-white relative">
         <div className="max-w-4xl mx-auto px-6 sm:px-8 text-center">
           <FadeIn>

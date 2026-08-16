@@ -8,14 +8,14 @@ interface HeaderProps {
 
 const NAV_ITEMS = [
   { label: 'Home', to: '/' },
+  { label: 'About', to: '/about' },
   { label: 'Vision', to: '/vision' },
   { label: 'Blueprint', to: '/blueprint' },
-  { label: 'Systems', to: '/systems' },
-  { label: 'Human', to: '/human' },
-  { label: 'Consciousness', to: '/consciousness' },
-  { label: 'Intelligence', to: '/intelligence' },
+  { label: 'Human Evolution', to: '/human-evolution' },
+  { label: 'Integrated Intelligence', to: '/integrated-intelligence' },
   { label: 'Civilization', to: '/civilization' },
-  { label: 'Creation', to: '/creation' },
+  { label: 'Heaven on Earth', to: '/heaven-on-earth' },
+  { label: 'Universal ID', to: '/universal-id' },
   { label: 'Projects', to: '/projects' },
   { label: 'Join', to: '/join' },
 ];

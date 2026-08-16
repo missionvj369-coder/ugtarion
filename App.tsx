@@ -14,6 +14,11 @@ import HealthCheck from './components/HealthCheck';
 import HomePage from './pages/HomePage';
 import VisionPage from './pages/VisionPage';
 import BlueprintPage from './pages/BlueprintPage';
+import AboutPage from './pages/AboutPage';
+import HumanEvolutionPage from './pages/HumanEvolutionPage';
+import IntegratedIntelligencePage from './pages/IntegratedIntelligencePage';
+import HeavenOnEarthPage from './pages/HeavenOnEarthPage';
+import UniversalIdPage from './pages/UniversalIdPage';
 import HumanPage from './pages/HumanPage';
 import ConsciousnessPage from './pages/ConsciousnessPage';
 import IntelligencePage from './pages/IntelligencePage';
@@ -93,10 +98,15 @@ const App: React.FC = () => {
                 )} />
                 <Route path="/vision" element={withFooter(<VisionPage onOpenIdModal={openIdModal} />)} />
                 <Route path="/blueprint" element={withFooter(<BlueprintPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/about" element={withFooter(<AboutPage />)} />
                 <Route path="/systems" element={withFooter(<SystemsPage onOpenIdModal={openIdModal} />)} />
-                <Route path="/human" element={withFooter(<HumanPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/human-evolution" element={withFooter(<HumanEvolutionPage />)} />
+                <Route path="/integrated-intelligence" element={withFooter(<IntegratedIntelligencePage />)} />
+                <Route path="/heaven-on-earth" element={withFooter(<HeavenOnEarthPage />)} />
+                <Route path="/universal-id" element={withFooter(<UniversalIdPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/human" element={<Navigate to="/human-evolution" replace />} />
+                <Route path="/intelligence" element={<Navigate to="/integrated-intelligence" replace />} />
                 <Route path="/consciousness" element={withFooter(<ConsciousnessPage onOpenIdModal={openIdModal} />)} />
-                <Route path="/intelligence" element={withFooter(<IntelligencePage onOpenIdModal={openIdModal} />)} />
                 <Route path="/civilization" element={withFooter(<CivilizationPage onOpenIdModal={openIdModal} />)} />
                 <Route path="/creation" element={withFooter(<CreationPage onOpenIdModal={openIdModal} />)} />
                 <Route path="/projects" element={withFooter(<ProjectsPage onOpenIdModal={openIdModal} />)} />

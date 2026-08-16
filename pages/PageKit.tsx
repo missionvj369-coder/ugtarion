@@ -104,15 +104,16 @@ interface CTAButtonProps {
   to?: string;
   onClick?: () => void;
   variant?: 'primary' | 'outline';
+  className?: string;
 }
 
-export const CTAButton: React.FC<CTAButtonProps> = ({ label, to, onClick, variant = 'primary' }) => {
+export const CTAButton: React.FC<CTAButtonProps> = ({ label, to, onClick, variant = 'primary', className = '' }) => {
   const classes =
     variant === 'primary'
       ? 'bg-zinc-900 text-white hover:bg-zinc-800 shadow-lg shadow-zinc-900/10'
       : 'border border-zinc-300 text-zinc-800 hover:border-zinc-900 hover:bg-zinc-50';
 
-  const finalClasses = `inline-flex items-center justify-center font-medium px-8 py-3.5 text-sm tracking-wider uppercase rounded-full transition-all duration-300 active:scale-95 ${classes}`;
+  const finalClasses = `inline-flex items-center justify-center font-medium px-8 py-3.5 text-sm tracking-wider uppercase rounded-full transition-all duration-300 active:scale-95 ${classes} ${className}`;
 
   if (to) {
     // External links
