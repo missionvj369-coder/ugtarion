@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { updatePageMetadata } from '../lib/seo';
 import { PageHero, ContentSection, P, Block, CTAButton } from './PageKit';
 import FadeIn from '../components/FadeIn';
 
 const AboutPage: React.FC = () => {
+  useEffect(() => {
+    updatePageMetadata(
+      'About Universal Guard Trust — Human Evolution & Civilization',
+      'Learn about the vision, purpose, and framework of Universal Guard Trust (UGT) and its commitment to the conscious evolution of humanity.'
+    );
+  }, []);
+
   return (
     <>
       <PageHero

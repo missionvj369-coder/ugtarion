@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { updatePageMetadata } from '../lib/seo';
 import { PageHero, ContentSection, P, CTASection, CTAButton } from './PageKit';
 
 interface ProjectsPageProps {
@@ -21,8 +22,16 @@ const projectAreas = [
 
 const projectJourney = ['Question', 'Discover', 'Design', 'Build', 'Test', 'Measure', 'Improve', 'Share', 'Replicate', 'Evolve'];
 
-const ProjectsPage: React.FC<ProjectsPageProps> = ({ onOpenIdModal }) => (
-  <>
+const ProjectsPage: React.FC<ProjectsPageProps> = ({ onOpenIdModal }) => {
+  useEffect(() => {
+    updatePageMetadata(
+      'UGT Projects — Universal Guard Trust',
+      'Explore the practical manifestations of the UGT vision through real-world projects dedicated to human flourishing and civilization transformation.'
+    );
+  }, []);
+
+  return (
+    <>
       <PageHero
         eyebrow="Projects"
         title="Ideas Are Only the Beginning"
@@ -112,7 +121,8 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ onOpenIdModal }) => (
       secondaryLabel="Claim Your Universal ID"
       onOpenIdModal={onOpenIdModal}
     />
-  </>
-);
+    </>
+  );
+};
 
 export default ProjectsPage;

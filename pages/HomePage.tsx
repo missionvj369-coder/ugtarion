@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { updatePageMetadata } from '../lib/seo';
 import { PageHero, ContentSection, P, PillarGrid, CTASection, FlowDisplay, CTAButton } from './PageKit';
 import FadeIn from '../components/FadeIn';
 import GratitudeSection from '../components/GratitudeSection';
@@ -41,6 +42,13 @@ const intelligences = [
 const creationLoop = ['Understand', 'Question', 'Connect', 'Create', 'Test', 'Measure', 'Learn', 'Evolve'];
 
 const HomePage: React.FC<HomePageProps> = ({ onOpenIdModal }) => {
+  useEffect(() => {
+    updatePageMetadata(
+      'Universal Guard Trust — Human Evolution, Integrated Intelligence & Civilization',
+      'Universal Guard Trust (UGT) is a living framework dedicated to human evolution, human flourishing, and the conscious transformation of civilization through integrated intelligence and cosmic alignment.'
+    );
+  }, []);
+
   return (
     <>
       <PageHero

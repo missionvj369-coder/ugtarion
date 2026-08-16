@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { updatePageMetadata } from '../lib/seo';
 import { PageHero, ContentSection, P, Block, CTAButton } from './PageKit';
 
 const UniversalIdPage: React.FC<{ onOpenIdModal: () => void }> = ({ onOpenIdModal }) => {
+  useEffect(() => {
+    updatePageMetadata(
+      'Universal ID — Universal Guard Trust',
+      'Claim your sovereign Universal ID and enter the UGT ecosystem to contribute to the conscious evolution of humanity.'
+    );
+  }, []);
+
   return (
     <>
       <PageHero

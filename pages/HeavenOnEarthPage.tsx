@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { updatePageMetadata } from '../lib/seo';
 import { PageHero, ContentSection, P, Block, CTAButton } from './PageKit';
 
 const HeavenOnEarthPage: React.FC = () => {
+  useEffect(() => {
+    updatePageMetadata(
+      'Heaven on Earth — Universal Guard Trust',
+      'The civilizational direction toward the perfection of creation, reducing suffering and expanding human dignity through conscious participation.'
+    );
+  }, []);
+
   return (
     <>
       <PageHero

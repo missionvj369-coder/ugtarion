@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { updatePageMetadata } from '../lib/seo';
 import { PageHero, ContentSection, P, Block, CTAButton } from './PageKit';
 
 const HumanEvolutionPage: React.FC = () => {
+  useEffect(() => {
+    updatePageMetadata(
+      'Human Evolution — Universal Guard Trust',
+      'Explore the expansion of human capacity, consciousness, and the evolutionary journey toward a more conscious and aligned humanity.'
+    );
+  }, []);
+
   return (
     <>
       <PageHero

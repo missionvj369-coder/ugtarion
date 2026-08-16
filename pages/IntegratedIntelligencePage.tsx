@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { updatePageMetadata } from '../lib/seo';
 import { PageHero, ContentSection, P, PillarGrid, Block, CTAButton } from './PageKit';
 
 const intelligences = [
@@ -15,6 +16,13 @@ const intelligences = [
 ];
 
 const IntegratedIntelligencePage: React.FC = () => {
+  useEffect(() => {
+    updatePageMetadata(
+      'Integrated Intelligence — Universal Guard Trust',
+      'Exploring the synergy between human, artificial, scientific, collective, and ecological intelligences to solve complex global challenges.'
+    );
+  }, []);
+
   return (
     <>
       <PageHero

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { updatePageMetadata } from '../lib/seo';
 import { PageHero, ContentSection, P, CTASection, CTAButton } from './PageKit';
 import FadeIn from '../components/FadeIn';
 
@@ -19,8 +20,16 @@ const civilizationSystems = [
   { title: 'Continuous Learning', description: 'Recognize mistakes fastest. Measure honestly. Change course.' },
 ];
 
-const CivilizationPage: React.FC<CivilizationPageProps> = ({ onOpenIdModal }) => (
-  <>
+const CivilizationPage: React.FC<CivilizationPageProps> = ({ onOpenIdModal }) => {
+  useEffect(() => {
+    updatePageMetadata(
+      'Civilization Transformation — Universal Guard Trust',
+      'Understanding civilization as an interconnected system to foster human flourishing and planetary stability.'
+    );
+  }, []);
+
+  return (
+    <>
     <PageHero
       eyebrow="Civilization"
       title="What Happens When Humanity Begins to Build as One Species?"
@@ -132,7 +141,8 @@ const CivilizationPage: React.FC<CivilizationPageProps> = ({ onOpenIdModal }) =>
         secondaryLabel="Enter the Creator Community"
         secondaryTo="https://creatorcommunity.space/"
       />
-  </>
-);
+    </>
+  );
+};
 
 export default CivilizationPage;
