@@ -14,6 +14,7 @@ Allow: /
 
 # Sitemap
 Sitemap: https://ugtglobal.space/sitemap.xml
+Sitemap: https://www.ugtglobal.space/sitemap.xml
 
 # Disallow admin and private areas
 Disallow: /api/

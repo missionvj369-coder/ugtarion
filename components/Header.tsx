@@ -8,12 +8,12 @@ interface HeaderProps {
 
 const NAV_ITEMS = [
   { label: 'Home', to: '/' },
-  { label: 'About', to: '/about' },
+  { label: 'About UGT', to: '/about-universal-guard-trust' },
   { label: 'Vision', to: '/vision' },
   { label: 'Blueprint', to: '/blueprint' },
   { label: 'Human Evolution', to: '/human-evolution' },
   { label: 'Integrated Intelligence', to: '/integrated-intelligence' },
-  { label: 'Civilization', to: '/civilization' },
+  { label: 'Civilization', to: '/civilization-transformation' },
   { label: 'Heaven on Earth', to: '/heaven-on-earth' },
   { label: 'Universal ID', to: '/universal-id' },
   { label: 'Projects', to: '/projects' },
