@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/ContactSection';
 import UniversalIdPortal from './components/UniversalIdPortal';
@@ -15,6 +15,7 @@ import HomePage from './pages/HomePage';
 import VisionPage from './pages/VisionPage';
 import BlueprintPage from './pages/BlueprintPage';
 import AboutPage from './pages/AboutPage';
+import AboutUGTPage from './pages/AboutUGTPage';
 import HumanEvolutionPage from './pages/HumanEvolutionPage';
 import IntegratedIntelligencePage from './pages/IntegratedIntelligencePage';
 import HeavenOnEarthPage from './pages/HeavenOnEarthPage';
@@ -27,6 +28,29 @@ import CreationPage from './pages/CreationPage';
 import ProjectsPage from './pages/ProjectsPage';
 import JoinPage from './pages/JoinPage';
 import SystemsPage from './pages/SystemsPage';
+import KnowledgePage from './pages/KnowledgePage';
+import QuestionsPage from './pages/QuestionsPage';
+import MediaPage from './pages/MediaPage';
+import KnowledgeHumanEvolutionPage from './pages/KnowledgeHumanEvolutionPage';
+import KnowledgeIntegratedIntelligencePage from './pages/KnowledgeIntegratedIntelligencePage';
+import KnowledgeHumanFlourishingPage from './pages/KnowledgeHumanFlourishingPage';
+import KnowledgeCivilizationTransformationPage from './pages/KnowledgeCivilizationTransformationPage';
+import KnowledgeHeavenOnEarthPage from './pages/KnowledgeHeavenOnEarthPage';
+import KnowledgeUniversalIdPage from './pages/KnowledgeUniversalIdPage';
+import KnowledgeConsciousCivilizationPage from './pages/KnowledgeConsciousCivilizationPage';
+import KnowledgeTechnologyAndHumanFlourishingPage from './pages/KnowledgeTechnologyAndHumanFlourishingPage';
+import KnowledgeFutureOfCivilizationPage from './pages/KnowledgeFutureOfCivilizationPage';
+import QuestionHeavenOnEarthPage from './pages/QuestionHeavenOnEarthPage';
+import QuestionIntegratedIntelligencePage from './pages/QuestionIntegratedIntelligencePage';
+import QuestionHumanFlourishingPage from './pages/QuestionHumanFlourishingPage';
+import QuestionBetterCivilizationPage from './pages/QuestionBetterCivilizationPage';
+import QuestionTechnologyPage from './pages/QuestionTechnologyPage';
+import QuestionNaturePage from './pages/QuestionNaturePage';
+import QuestionConsciousCivilizationPage from './pages/QuestionConsciousCivilizationPage';
+import MediaMusicPage from './pages/MediaMusicPage';
+import MediaPodcastsPage from './pages/MediaPodcastsPage';
+import MediaVideosPage from './pages/MediaVideosPage';
+import MediaFilmsPage from './pages/MediaFilmsPage';
 
 // Lazy load heavy components for performance
 const LazyVerificationPage = lazy(() => import('./components/VerificationPage'));
@@ -48,6 +72,14 @@ const PageLoader: React.FC = () => (
 if (typeof window !== 'undefined') {
   setupGlobalErrorHandlers();
 }
+
+const ScrollToTop: React.FC = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
 
 const App: React.FC = () => {
   const [isIdModalOpen, setIsIdModalOpen] = useState(false);
@@ -85,6 +117,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <ScrollToTop />
         <div className="bg-transparent text-zinc-800 antialiased">
           <Header onOpenIdModal={openIdModal} />
           <main id="main-content">
@@ -96,21 +129,47 @@ const App: React.FC = () => {
                     <Footer />
                   </>
                 )} />
+                <Route path="/about-universal-guard-trust" element={withFooter(<AboutUGTPage />)} />
+                <Route path="/about" element={withFooter(<AboutPage />)} />
                 <Route path="/vision" element={withFooter(<VisionPage onOpenIdModal={openIdModal} />)} />
                 <Route path="/blueprint" element={withFooter(<BlueprintPage onOpenIdModal={openIdModal} />)} />
-                <Route path="/about" element={withFooter(<AboutPage />)} />
                 <Route path="/systems" element={withFooter(<SystemsPage onOpenIdModal={openIdModal} />)} />
                 <Route path="/human-evolution" element={withFooter(<HumanEvolutionPage />)} />
                 <Route path="/integrated-intelligence" element={withFooter(<IntegratedIntelligencePage />)} />
                 <Route path="/heaven-on-earth" element={withFooter(<HeavenOnEarthPage />)} />
+                <Route path="/heaven-on-earth/blueprint" element={withFooter(<BlueprintPage onOpenIdModal={openIdModal} />)} />
                 <Route path="/universal-id" element={withFooter(<UniversalIdPage onOpenIdModal={openIdModal} />)} />
-                <Route path="/human" element={<Navigate to="/human-evolution" replace />} />
-                <Route path="/intelligence" element={<Navigate to="/integrated-intelligence" replace />} />
-                <Route path="/consciousness" element={withFooter(<ConsciousnessPage onOpenIdModal={openIdModal} />)} />
-                <Route path="/civilization" element={withFooter(<CivilizationPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/conscious-civilization" element={withFooter(<ConsciousnessPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/civilization-transformation" element={withFooter(<CivilizationPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/civilization" element={<Navigate to="/civilization-transformation" replace />} />
                 <Route path="/creation" element={withFooter(<CreationPage onOpenIdModal={openIdModal} />)} />
                 <Route path="/projects" element={withFooter(<ProjectsPage onOpenIdModal={openIdModal} />)} />
                 <Route path="/join" element={withFooter(<JoinPage onOpenIdModal={openIdModal} />)} />
+                <Route path="/knowledge" element={withFooter(<KnowledgePage />)} />
+                <Route path="/knowledge/human-evolution" element={withFooter(<KnowledgeHumanEvolutionPage />)} />
+                <Route path="/knowledge/integrated-intelligence" element={withFooter(<KnowledgeIntegratedIntelligencePage />)} />
+                <Route path="/knowledge/human-flourishing" element={withFooter(<KnowledgeHumanFlourishingPage />)} />
+                <Route path="/knowledge/civilization-transformation" element={withFooter(<KnowledgeCivilizationTransformationPage />)} />
+                <Route path="/knowledge/heaven-on-earth" element={withFooter(<KnowledgeHeavenOnEarthPage />)} />
+                <Route path="/knowledge/universal-id" element={withFooter(<KnowledgeUniversalIdPage />)} />
+                <Route path="/knowledge/conscious-civilization" element={withFooter(<KnowledgeConsciousCivilizationPage />)} />
+                <Route path="/knowledge/technology-and-human-flourishing" element={withFooter(<KnowledgeTechnologyAndHumanFlourishingPage />)} />
+                <Route path="/knowledge/future-of-civilization" element={withFooter(<KnowledgeFutureOfCivilizationPage />)} />
+                <Route path="/questions" element={withFooter(<QuestionsPage />)} />
+                <Route path="/questions/can-humanity-create-heaven-on-earth" element={withFooter(<QuestionHeavenOnEarthPage />)} />
+                <Route path="/questions/what-is-integrated-intelligence" element={withFooter(<QuestionIntegratedIntelligencePage />)} />
+                <Route path="/questions/what-does-human-flourishing-mean" element={withFooter(<QuestionHumanFlourishingPage />)} />
+                <Route path="/questions/what-would-a-better-civilization-look-like" element={withFooter(<QuestionBetterCivilizationPage />)} />
+                <Route path="/questions/how-can-technology-improve-human-life" element={withFooter(<QuestionTechnologyPage />)} />
+                <Route path="/questions/how-can-humanity-live-in-harmony-with-nature" element={withFooter(<QuestionNaturePage />)} />
+                <Route path="/questions/what-is-conscious-civilization" element={withFooter(<QuestionConsciousCivilizationPage />)} />
+                <Route path="/media" element={withFooter(<MediaPage />)} />
+                <Route path="/media/music" element={withFooter(<MediaMusicPage />)} />
+                <Route path="/media/podcasts" element={withFooter(<MediaPodcastsPage />)} />
+                <Route path="/media/videos" element={withFooter(<MediaVideosPage />)} />
+                <Route path="/media/films" element={withFooter(<MediaFilmsPage />)} />
+                <Route path="/human" element={<Navigate to="/human-evolution" replace />} />
+                <Route path="/intelligence" element={<Navigate to="/integrated-intelligence" replace />} />
                 <Route path="/verify/:uid" element={<LazyVerificationPage />} />
                 <Route path="/auth/callback" element={<LazyVerificationPage />} />
                 <Route path="/password-reset" element={<LazyPasswordResetRequest onBackToLogin={() => window.history.back()} />} />
