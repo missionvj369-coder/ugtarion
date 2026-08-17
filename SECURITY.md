@@ -18,7 +18,7 @@ Please report suspected security vulnerabilities privately.
 
 ### Security Contact
 
-**security@ugtglobal.space**
+security@ugtglobal.space
 
 Do not publicly disclose a vulnerability before the UGT technical team has had an opportunity to assess and address it.
 
@@ -103,58 +103,3 @@ Use:
 
 ```bash
 npm audit
-and appropriate project security tooling.
-
-Critical vulnerabilities should be investigated promptly.
-
-Database Security
-
-Supabase and other database security controls must preserve:
-
-Row Level Security
-least-privilege access
-server/client credential separation
-safe migrations
-controlled administrative access
-
-Never expose service-role credentials to frontend code.
-
-Changes to Security Controls
-
-Changes affecting authentication, authorization, database security, secrets, API access, deployment security or cryptography should be reviewed carefully and tested before production deployment.
-
-Scope
-
-This policy applies to the UGTarion repository and its associated technical infrastructure where controlled by Universal Guard Trust.
-
-Other UGT ecosystem projects may maintain separate security policies.
-
-Universal Guard Trust
-
-https://www.ugtglobal.space/
-
-
-
-Commit with:
-
-
-**`Add security policy`**
-
-
-Then stop.
-
-
-### After you commit it
-
-
-Our repository foundation will be:
-
-
-```text
-README.md
-CONTRIBUTING.md
-SECURITY.md
-existing CI
-existing security implementation
-existing deployment documentation
-existing testing infrastructure
