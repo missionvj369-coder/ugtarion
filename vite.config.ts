@@ -30,12 +30,26 @@ export default defineConfig(({ mode }) => {
         // Optimize chunk splitting for better caching
         rollupOptions: {
           output: {
-            manualChunks: {
+            manualChunks: (id) => {
               // Vendor chunks
-              'vendor-react': ['react', 'react-dom'],
-              'vendor-motion': ['motion/react'],
-              'vendor-lucide': ['lucide-react'],
-              'vendor-supabase': ['@supabase/supabase-js'],
+              if (id.includes('node_modules')) {
+                if (id.includes('motion')) {
+                  return 'vendor-motion';
+                }
+                if (id.includes('react') || id.includes('react-dom')) {
+                  return 'vendor-react';
+                }
+                if (id.includes('lucide-react')) {
+                  return 'vendor-lucide';
+                }
+                if (id.includes('@supabase')) {
+                  return 'vendor-supabase';
+                }
+                if (id.includes('jose') || id.includes('jsonwebtoken')) {
+                  return 'vendor-auth';
+                }
+                return 'vendor-misc';
+              }
             },
             // Optimize chunk file names for caching
             chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -56,14 +70,34 @@ export default defineConfig(({ mode }) => {
         },
         // Increase chunk size warning limit
         chunkSizeWarningLimit: 800,
-        // Enable minification
-        minify: 'esbuild',
+        // Enable minification with terser for better compression
+        minify: 'terser',
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+            pure_funcs: ['console.log', 'console.info', 'console.debug'],
+            passes: 2,
+          },
+          mangle: {
+            safari10: true,
+          },
+          format: {
+            comments: false,
+          },
+        },
         // CSS code splitting
         cssCodeSplit: true,
         // Generate source maps for production debugging
         sourcemap: false,
         // Optimize dependencies
         target: 'es2020',
+        // Module preloading
+        modulePreload: {
+          polyfill: true,
+        },
+        // Report compressed size
+        reportCompressedSize: true,
       },
       // Optimize dependencies
       optimizeDeps: {

@@ -32,22 +32,11 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ onOpenIdModal }) => {
 
   return (
     <>
-      <PageHero
-        eyebrow="Projects"
-        title="Ideas Are Only the Beginning"
-        subtitle="A better civilization is not created by describing it. It is created by building. UGT turns questions into practical projects that can be explored, tested, improved and shared."
-      >
-        <div className="mt-10">
-          <a
-            href="https://creatorcommunity.space"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center font-medium px-8 py-3.5 text-sm tracking-wider uppercase rounded-full transition-all duration-300 active:scale-95 bg-zinc-900 text-white hover:bg-zinc-800 shadow-lg shadow-zinc-900/10"
-          >
-            Enter the Work
-          </a>
-        </div>
-      </PageHero>
+       <PageHero
+         eyebrow="Projects"
+         title="Ideas Are Only the Beginning"
+         subtitle="A better civilization is not created by describing it. It is created by building. UGT turns questions into practical projects that can be explored, tested, improved and shared."
+       />
 
     <ContentSection eyebrow="The Project Field" title="UNDERSTAND → BUILD → TEST → LEARN → SHARE" center>
       <div className="max-w-3xl mx-auto text-center space-y-5">
@@ -112,6 +101,9 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ onOpenIdModal }) => {
         <P>Each completed project becomes knowledge for the next one.</P>
       </div>
     </ContentSection>
+
+    {/* Additional spacing to bring the CTA button down */}
+    <div className="h-24 md:h-32 lg:h-40" />
 
     <CTASection
       title="The Future Will Not Only Be Discovered."
