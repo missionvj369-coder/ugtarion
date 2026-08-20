@@ -194,6 +194,95 @@ const HomePage: React.FC<HomePageProps> = ({ onOpenIdModal }) => {
         </div>
       </ContentSection>
 
+      <ContentSection
+        eyebrow="Framework Glossary"
+        title="Key Terms & Acronyms"
+        center
+        className="bg-white/40"
+      >
+        <div className="max-w-4xl mx-auto">
+          <P className="text-center mb-10 max-w-2xl mx-auto">
+            UGT uses a specific vocabulary to describe its framework. Understanding these terms helps navigate the platform and participate in the work.
+          </P>
+          <dl className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <dt className="font-semibold text-zinc-900">UGT</dt>
+                <dd className="text-zinc-600 mt-1">Universal Guard Trust — The living framework for human evolution, integrated intelligence, and civilization transformation.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">Universal ID</dt>
+                <dd className="text-zinc-600 mt-1">A sovereign, non-transferable identity credential (format: UGT-XXXXXX) that grants access to the UGT ecosystem and trust network.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">HI</dt>
+                <dd className="text-zinc-600 mt-1">Human Intelligence — Experience, empathy, creativity, judgment, values, and lived knowledge.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">AI</dt>
+                <dd className="text-zinc-600 mt-1">Artificial Intelligence — Analysis, synthesis, simulation, and discovery at scale.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">SI</dt>
+                <dd className="text-zinc-600 mt-1">Scientific Intelligence — Evidence, measurement, experimentation, and verification.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">CI</dt>
+                <dd className="text-zinc-600 mt-1">Collective Intelligence — Distributed experience, local knowledge, and collaboration.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">EI</dt>
+                <dd className="text-zinc-600 mt-1">Ecological Intelligence — Understanding living systems and biological networks of the planet.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">CulI</dt>
+                <dd className="text-zinc-600 mt-1">Cultural Intelligence — Wisdom embedded in diverse human traditions and social expressions.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">HIstI</dt>
+                <dd className="text-zinc-600 mt-1">Historical Intelligence — Learning from patterns of the past to navigate the future.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">CrI</dt>
+                <dd className="text-zinc-600 mt-1">Creative Intelligence — The ability to imagine and manifest new possibilities and forms.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">SyI</dt>
+                <dd className="text-zinc-600 mt-1">Systems Intelligence — Recognizing interconnectedness and feedback loops of complex wholes.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">TI</dt>
+                <dd className="text-zinc-600 mt-1">Technological Intelligence — Application of tools and methods to extend human capability.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">Integrated Intelligence</dt>
+                <dd className="text-zinc-600 mt-1">The synthesis of HI × AI × SI × CI × EI × CulI × HIstI × CrI × SyI × TI as complementary forms of knowledge.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">Heaven on Earth</dt>
+                <dd className="text-zinc-600 mt-1">A civilizational direction: the aspiration toward the perfection of creation being progressively restored through conscious human participation.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">Conscious Civilization</dt>
+                <dd className="text-zinc-600 mt-1">A civilization that operates with awareness of its interconnected systems and consciously evolves toward human flourishing.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">Creation Loop</dt>
+                <dd className="text-zinc-600 mt-1">The iterative process: Understand → Question → Connect → Create → Test → Measure → Learn → Evolve.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">Blueprint</dt>
+                <dd className="text-zinc-600 mt-1">The master architecture of interconnected systems: Humanity, Consciousness, Truth, Knowledge, Intelligence, Human Needs, Planetary Systems, Food & Water, Health, Education, Technology, Ancient Intelligence, Civilization, Peace, Creation.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-zinc-900">Guardian</dt>
+                <dd className="text-zinc-600 mt-1">An individual who has claimed their Universal ID and participates in the UGT trust network.</dd>
+              </div>
+            </div>
+          </dl>
+        </div>
+      </ContentSection>
+
       <section className="py-20 sm:py-24 bg-white relative">
         <div className="max-w-4xl mx-auto px-6 sm:px-8 text-center">
           <FadeIn>
