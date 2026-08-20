@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SectionWrapper from './SectionWrapper';
 
 interface FAQItem {
@@ -6,6 +6,22 @@ interface FAQItem {
   answer: string;
   category: string;
 }
+
+// Generate FAQPage schema for search engines
+const generateFAQSchema = (faqs: FAQItem[]) => {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  };
+};
 
 const faqData: FAQItem[] = [
   // General
@@ -165,6 +181,30 @@ const FAQ: React.FC = () => {
     }
     setExpandedItems(newExpanded);
   };
+
+  // Inject FAQPage schema into document head
+  useEffect(() => {
+    const schema = generateFAQSchema(faqData);
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(schema);
+    script.id = 'faq-schema';
+    
+    // Remove existing schema if present
+    const existing = document.getElementById('faq-schema');
+    if (existing) {
+      existing.remove();
+    }
+    
+    document.head.appendChild(script);
+    
+    return () => {
+      const existingScript = document.getElementById('faq-schema');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, []);
 
   return (
     <SectionWrapper>
