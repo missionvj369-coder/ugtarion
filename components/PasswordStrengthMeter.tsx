@@ -15,7 +15,7 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
   const [strength, setStrength] = useState<PasswordStrength>({
     score: 0,
     label: 'Very Weak',
-    color: 'text-red-500',
+    color: 'text-amber-500',
     feedback: [],
   });
 
@@ -24,7 +24,7 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
   }, [password]);
 
   const getBarColor = (score: number): string => {
-    if (score <= 1) return 'bg-red-500';
+    if (score <= 1) return 'bg-amber-500';
     if (score <= 2) return 'bg-orange-500';
     if (score <= 3) return 'bg-yellow-500';
     if (score <= 4) return 'bg-lime-500';

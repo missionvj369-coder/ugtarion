@@ -76,6 +76,8 @@ function transformProfile(raw: {
 }
 
 async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  let apiError: unknown = null;
+
   // Try API server first
   if (API_BASE_URL) {
     try {
@@ -91,8 +93,9 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
         throw new Error(payload?.error || response.statusText || 'API request failed.');
       }
       return payload as T;
-    } catch (apiError) {
-      console.warn('API server request failed, falling back to direct Supabase:', apiError);
+    } catch (err) {
+      apiError = err;
+      console.warn('API server request failed, falling back to direct Supabase:', err);
       // Fall through to direct Supabase
     }
   }
@@ -100,6 +103,14 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
   // Fallback to direct Supabase RPC calls
   const supabase = getUntypedSupabaseClient() as any;
   if (!supabase) {
+    // Neither the API server nor Supabase is available. Surface a clear,
+    // actionable error instead of a raw "TypeError: Failed to fetch".
+    if (apiError instanceof TypeError && (apiError as Error).message.includes('fetch')) {
+      throw Object.assign(
+        new Error('Unable to reach the registry server. Please check your internet connection and try again.'),
+        { isNetworkError: true, originalError: apiError }
+      );
+    }
     throw new Error('No API server configured and no Supabase client available');
   }
 

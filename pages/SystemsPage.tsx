@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageHero, ContentSection, P, CTASection, CTAButton, FlowDisplay } from './PageKit';
 import FadeIn from '../components/FadeIn';
+import BlueprintConstellation from '../components/BlueprintConstellation';
 
 interface SystemsPageProps {
   onOpenIdModal: () => void;
@@ -144,6 +145,24 @@ const SystemsPage: React.FC<SystemsPageProps> = ({ onOpenIdModal }) => {
         title="The UGT Systems Field"
         subtitle="One interconnected architecture for understanding humanity, intelligence, civilization and transformation."
       />
+
+      {/* Living interactive constellation of the Blueprint systems */}
+      <section className="py-16 sm:py-20 bg-[#07070c]">
+        <div className="max-w-6xl mx-auto px-6 sm:px-8">
+          <div className="text-center mb-10">
+            <p className="text-xs sm:text-sm font-semibold tracking-[0.25em] uppercase text-amber-300/90 mb-4">
+              Explore the Network
+            </p>
+            <h2 className="font-serif text-3xl sm:text-4xl font-normal tracking-tight text-white text-balance">
+              The Blueprint, alive
+            </h2>
+            <p className="mt-4 text-zinc-400 font-light max-w-2xl mx-auto leading-relaxed">
+              Drag any system to feel how the others respond. Tap a node to read what it holds.
+            </p>
+          </div>
+          <BlueprintConstellation height={560} />
+        </div>
+      </section>
 
       {/* Systems Map */}
       <ContentSection

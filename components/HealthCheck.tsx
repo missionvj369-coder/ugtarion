@@ -116,14 +116,14 @@ export const HealthCheck: React.FC<HealthCheckProps> = ({
   }, [performHealthCheck, checkInterval]);
 
   const getStatusColor = (status: 'ok' | 'error') => {
-    return status === 'ok' ? 'bg-green-500' : 'bg-red-500';
+    return status === 'ok' ? 'bg-green-500' : 'bg-amber-500';
   };
 
   const getOverallStatusColor = (status: HealthCheckResult['status']) => {
     switch (status) {
       case 'healthy': return 'bg-green-500';
       case 'degraded': return 'bg-yellow-500';
-      case 'unhealthy': return 'bg-red-500';
+      case 'unhealthy': return 'bg-amber-600';
     }
   };
 

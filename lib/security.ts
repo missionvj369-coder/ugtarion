@@ -55,7 +55,7 @@ export function checkPasswordStrength(password: string): PasswordStrength {
   let score = 0;
 
   if (password.length === 0) {
-    return { score: 0, label: 'Very Weak', color: 'text-red-500', feedback: ['Password is required'] };
+    return { score: 0, label: 'Very Weak', color: 'text-amber-500', feedback: ['Password is required'] };
   }
 
   // Length checks
@@ -81,7 +81,7 @@ export function checkPasswordStrength(password: string): PasswordStrength {
   score = Math.min(score, 5);
 
   const labels: PasswordStrength['label'][] = ['Very Weak', 'Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
-  const colors = ['text-red-500', 'text-red-500', 'text-orange-500', 'text-yellow-500', 'text-lime-500', 'text-green-500'];
+  const colors = ['text-amber-500', 'text-amber-500', 'text-orange-500', 'text-yellow-500', 'text-lime-500', 'text-green-500'];
 
   return {
     score,

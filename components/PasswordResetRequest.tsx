@@ -121,7 +121,7 @@ export function PasswordResetRequest({ onBackToLogin }: PasswordResetRequestProp
           </div>
 
           {error && (
-            <div className="flex items-center text-red-400 text-sm" role="alert">
+            <div className="flex items-center text-green-600 text-sm" role="alert">
               <AlertCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
               <span>{error}</span>
             </div>

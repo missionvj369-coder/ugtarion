@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { label: 'About UGT', to: '/about-universal-guard-trust' },
   { label: 'Vision', to: '/vision' },
   { label: 'Blueprint', to: '/blueprint' },
+  { label: 'Technology', to: '/technology' },
   { label: 'Human Evolution', to: '/human-evolution' },
   { label: 'Integrated Intelligence', to: '/integrated-intelligence' },
   { label: 'Civilization', to: '/civilization-transformation' },
@@ -44,7 +45,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenIdModal }) => {
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled || mobileMenuOpen
-        ? 'bg-white/95 backdrop-blur-sm border-b border-zinc-200/60 shadow-sm'
+        ? 'bg-white/95 backdrop-blur-sm border-b border-amber-500/25 shadow-sm'
         : 'bg-transparent'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-8">
@@ -52,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenIdModal }) => {
           <a href="/" aria-label="Home" className="flex items-center gap-2 text-zinc-900 select-none shrink-0">
             <UgtLogoIcon className="h-6 w-6 text-zinc-900 shrink-0" />
             <span className="flex flex-col leading-tight">
-              <span className="font-semibold tracking-wider text-sm sm:text-base uppercase whitespace-nowrap">
+              <span className="font-serif font-medium tracking-[0.28em] text-base sm:text-lg uppercase whitespace-nowrap">
                 UGT
               </span>
               <span className="text-[8px] sm:text-[9px] text-zinc-500 tracking-wide uppercase whitespace-nowrap hidden md:block">
@@ -69,8 +70,8 @@ const Header: React.FC<HeaderProps> = ({ onOpenIdModal }) => {
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`text-[10px] xl:text-[11px] font-medium tracking-wider uppercase transition-colors whitespace-nowrap ${
-                    isActive ? 'text-zinc-900' : 'text-zinc-600 hover:text-zinc-900'
+                  className={`nav-underline text-[10px] xl:text-[11px] font-medium tracking-wider uppercase transition-colors whitespace-nowrap ${
+                    isActive ? 'nav-underline-active text-zinc-900' : 'text-zinc-600 hover:text-zinc-900'
                   }`}
                 >
                   {item.label}
@@ -82,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenIdModal }) => {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onOpenIdModal}
-              className="hidden md:inline-block bg-zinc-900 text-white hover:bg-zinc-800 font-medium px-3 sm:px-4 py-1.5 text-[10px] sm:text-[11px] tracking-wider uppercase rounded-full transition-all duration-300 shrink-0 shadow-sm active:scale-95"
+              className="hidden md:inline-block bg-zinc-900 text-white hover:bg-zinc-800 font-medium px-3 sm:px-4 py-1.5 text-[10px] sm:text-[11px] tracking-wider uppercase rounded-full transition-all duration-300 shrink-0 shadow-sm hover:shadow-md active:scale-95 hover:-translate-y-0.5"
             >
               Universal ID
             </button>

@@ -1,0 +1,60 @@
+/* ============================================================
+   NEW THEME OVERRIDES — replaces old zinc/indigo theme entirely
+   Maps every old Tailwind color utility to the new green theme
+   ============================================================ */
+
+/* --- Background colors --- */
+.bg-zinc-50{background-color:#f5fbf6!important}
+.bg-zinc-100{background-color:#eaf6ec!important}
+.bg-zinc-800{background-color:#08872b!important}
+.bg-zinc-900{background-color:#06661f!important}
+.bg-zinc-950{background-color:#0a2e14!important}
+.bg-indigo-600{background-color:#08872b!important}
+
+/* --- Text colors --- */
+.text-zinc-50{color:#f5fbf6!important}
+.text-zinc-100{color:#eaf6ec!important}
+.text-zinc-400{color:#4a5c50!important}
+.text-zinc-500{color:#4a5c50!important}
+.text-zinc-600{color:#4a5c50!important}
+.text-zinc-800{color:#0c1a11!important}
+.text-zinc-900{color:#0c1a11!important}
+.text-indigo-600{color:#08872b!important}
+.text-white{color:#ffffff!important}
+
+/* --- Border colors --- */
+.border-zinc-200{border-color:#d7e8db!important}
+.border-zinc-800{border-color:#08872b!important}
+
+/* --- Hover backgrounds --- */
+.hover\:bg-zinc-800:hover{background-color:#08872b!important}
+.hover\:bg-zinc-50:hover{background-color:#f5fbf6!important}
+
+/* --- Hover text --- */
+.hover\:text-zinc-900:hover{color:#0c1a11!important}
+
+/* --- Body & html base theme --- */
+body{background:transparent!important;color:var(--ink)!important;font-family:"Plus Jakarta Sans",system-ui,sans-serif!important}
+html{background:#fff!important;scroll-padding-top:76px}
+
+/* --- Logo sizing fix (was too big) --- */
+.h-6{height:1.5rem!important;width:1.5rem!important}
+.w-6{width:1.5rem!important;height:1.5rem!important}
+.logo svg{width:26px!important;height:26px!important}
+
+/* --- Animations from new theme --- */
+@keyframes bounce-slow{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-10px)}60%{transform:translateY(-5px)}}
+@keyframes pulse-slow{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.85;transform:scale(0.97)}}
+@keyframes cosmic-drift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes float-slow{0%,100%{transform:translate3d(0,0,0)scale(1)}50%{transform:translate3d(0,-22px,0)scale(1.03)}}
+@keyframes draw-path{to{stroke-dashoffset:0}}
+@keyframes fade-in-text{to{opacity:1}}
+@keyframes wr{to{transform:none}}
+@keyframes fi{to{opacity:1}}
+@keyframes bn{0%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}100%{transform:translate(-50%,0)}}
+@keyframes highlight-glow{0%,100%{color:inherit;text-shadow:none}50%{color:#fff;text-shadow:0 0 8px rgba(255,255,255,0.7),0 0 16px rgba(255,255,255,0.5)}}
+
+.animate-bounce-slow{animation:bounce-slow 2s infinite!important}
+.animate-pulse-slow{animation:pulse-slow 3s ease-in-out infinite!important}
+.animate-cosmic-drift{animation:cosmic-drift 45s ease infinite!important}
+.animate-float-slow{animation:float-slow 10s ease-in-out infinite!important}

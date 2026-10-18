@@ -348,7 +348,7 @@ const VerificationPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100">
         <div className="text-center max-w-md mx-4">
-          <AlertCircleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <AlertCircleIcon className="w-16 h-16 text-green-600 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-zinc-800 mb-2">Verification Failed</h1>
           <p className="text-zinc-600 mb-6">{error}</p>
           <button

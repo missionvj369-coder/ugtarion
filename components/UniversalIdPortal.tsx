@@ -569,6 +569,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
   const [totalRegistrations, setTotalRegistrations] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [registryUnreachable, setRegistryUnreachable] = useState(false);
   const [view, setView] = useState<'register' | 'login' | 'id-card'>('register');
   
   // Registration Form States
@@ -638,13 +639,24 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
       }
     } catch (err: any) {
       const apiError = classifyError(err);
-      setError(apiError.message || 'Failed to sync with the registry. Please check your connection.');
+      if (apiError.isNetworkError) {
+        setRegistryUnreachable(true);
+        setError('Registry is currently unreachable. You can still register or log in below once the connection is restored.');
+      } else {
+        setError(apiError.message || 'Failed to sync with the registry. Please check your connection.');
+      }
       onAuthChange?.(null);
     } finally {
       setIsInitializing(false);
       setIsLoading(false);
     }
   }, [onAuthChange]);
+
+  const handleRetryRegistry = useCallback(() => {
+    setRegistryUnreachable(false);
+    setError('');
+    initRegistry();
+  }, [initRegistry]);
 
   useEffect(() => {
     if (!isModal || isOpen) {
@@ -758,8 +770,10 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
       }, 1500);
     } catch (err: any) {
       const apiError = classifyError(err);
-      // Handle duplicate phone/email errors specifically
-      if (apiError.message.includes('already registered') || apiError.message.includes('already exists') || apiError.code === '23505') {
+      if (apiError.isNetworkError) {
+        setRegistryUnreachable(true);
+        setError(apiError.message || 'Network error. Please check your connection and try again.');
+      } else if (apiError.message.includes('already registered') || apiError.message.includes('already exists') || apiError.code === '23505') {
         setError('This email or phone number is already registered. Please use a different one or log in.');
       } else {
         setError(apiError.message || 'An error occurred during verification. Please check your connection and try again.');
@@ -799,7 +813,13 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
         setLoginPassword('');
       }, 1200);
     } catch (err: any) {
-      setError(err.message || 'Alignment failed. Check your credential or register.');
+      const apiError = classifyError(err);
+      if (apiError.isNetworkError) {
+        setRegistryUnreachable(true);
+        setError(apiError.message || 'Network error. Please check your connection and try again.');
+      } else {
+        setError(apiError.message || 'Alignment failed. Check your credential or register.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1061,7 +1081,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
               {/* Feedback messages */}
               {error && (
                 <motion.div 
-                  className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-light flex items-start gap-2"
+                  className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-light flex items-start gap-2"
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
                   role="alert"
@@ -1082,6 +1102,19 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
                 >
                   <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                   <span>{success}</span>
+                </motion.div>
+              )}
+
+              {registryUnreachable && !currentUser && (
+                <motion.div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-light flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                  <span className="flex-1">{error || 'Registry is currently unreachable.'}</span>
+                  <button
+                    onClick={handleRetryRegistry}
+                    className="ml-2 px-3 py-1 text-xs border border-amber-500/50 text-amber-400 rounded hover:bg-amber-500/10 transition-colors"
+                  >
+                    Retry
+                  </button>
                 </motion.div>
               )}
 
@@ -1758,7 +1791,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
               {/* Content Body Area - Fixed scroll stability for mobile */}
               <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(100vh - 120px)' }}>
                 {error && (
-                  <div className="p-3 mb-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-medium" role="alert">
+                  <div className="p-3 mb-4 bg-green-500/10 border border-green-500/20 text-green-600 rounded-xl text-xs font-medium" role="alert">
                     {error}
                   </div>
                 )}

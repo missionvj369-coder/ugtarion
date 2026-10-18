@@ -113,8 +113,8 @@ class ErrorBoundary extends Component<Props, State> {
             {/* Error Card */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
               {/* Icon */}
-              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 flex items-center justify-center">
-                <AlertTriangle className="w-8 h-8 text-red-400" />
+              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-green-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-green-400" />
               </div>
 
               {/* Title */}
@@ -165,7 +165,7 @@ class ErrorBoundary extends Component<Props, State> {
             {showStackTrace && error && (
               <div className="mt-6 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-left">
                 <h2 className="text-sm font-semibold text-zinc-300 mb-3">Error Details</h2>
-                <pre className="text-xs text-red-400 overflow-x-auto whitespace-pre-wrap font-mono">
+                <pre className="text-xs text-green-400 overflow-x-auto whitespace-pre-wrap font-mono">
                   {error.toString()}
                   {'\n\n'}
                   {errorInfo?.componentStack}
