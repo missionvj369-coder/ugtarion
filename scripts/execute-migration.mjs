@@ -10,7 +10,15 @@ import path from 'path';
 import https from 'https';
 
 const supabaseUrl = 'https://mgrdamgdpnbtxgxdxwbs.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ncmRhbWdkcG5idHhneGR4d2JzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MzU3MjY0MiwiZXhwIjoyMDk5MTQ4NjQyfQ.boLH5sgyFBTgrV0SfDBedgwjNv_qiNymMpUNO3Qtz7o';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// Check if key is JWT (not valid for REST API)
+if (supabaseKey.startsWith('eyJ')) {
+  console.log('\n⚠️  WARNING: Key is a JWT, not a service_role secret key');
+  console.log('   JWTs work for Auth API (Authorization: Bearer), not REST API.');
+  console.log('   The REST API requires the sb_secret_xxx format key.');
+  process.exit(1);
+}
 
 // Read the migration file
 const migrationPath = path.join(process.cwd(), 'supabase', 'migrations', 'combined-auth-migration.sql');
