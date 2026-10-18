@@ -1,3 +1,24 @@
+# Cloudflare configuration - supports BOTH deploy paths:
+#   1. `npx wrangler deploy` (the Deploy command set in the Cloudflare dashboard)
+#      -> uploads dist/ as a Worker with static assets
+#   2. `npx wrangler pages deploy dist` (classic Pages deploy)
+# Both use the same dist/ output, so either dashboard setting works.
+#
+# NOTE: Worker names and Pages project names share one namespace. If the
+# deploy errors with "a Worker named ugtglobal already exists" (i.e. the
+# project is a classic Pages project), change the dashboard Deploy command
+# to `npx wrangler pages deploy dist` instead.
+
 name = "ugtglobal"
 compatibility_date = "2026-10-18"
+
+# Used by `wrangler pages deploy` (default output dir)
 pages_build_output_dir = "dist"
+
+# Used by `wrangler deploy` (Worker static assets)
+[assets]
+directory = "dist"
+# Serve dist/404.html for unmatched paths so deep links (/verify/:token,
+# /password-reset, etc.) render the SPA shell instead of a raw 404.
+# (Cloudflare Pages does this automatically; Workers assets require this key.)
+not_found_handling = "404-page"
