@@ -30,7 +30,7 @@ The UGT logo represents protection, unity, and global reach through a shield mot
 | **Pure White** | `#FFFFFF` | 255, 255, 255 | Backgrounds, text on dark |
 | **Light Gray** | `#F8FAFC` | 248, 250, 252 | Section backgrounds |
 | **Medium Gray** | `#64748B` | 100, 116, 139 | Secondary text |
-| **Error Red** | `#DC2626` | 220, 38, 38 | Error states, warnings |
+| **Alert Gold** | `#D97706` | 217, 119, 6 | Error states, warnings, alerts |
 | **Success Green** | `#16A34A` | 22, 163, 74 | Success messages |
 
 ### Typography

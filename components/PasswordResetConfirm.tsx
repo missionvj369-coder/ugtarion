@@ -111,7 +111,7 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
 
         {!tokenValid && (
           <div className="text-center">
-            <div className="flex items-center text-red-400 text-sm justify-center" role="alert">
+            <div className="flex items-center text-green-600 text-sm justify-center" role="alert">
               <AlertCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
               <span>{error || 'Invalid or expired reset token. Please request a new password reset link.'}</span>
             </div>
@@ -196,7 +196,7 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
             </div>
 
             {error && (
-              <div className="flex items-center text-red-400 text-sm" role="alert">
+              <div className="flex items-center text-green-600 text-sm" role="alert">
                 <AlertCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span>{error}</span>
               </div>

@@ -1,19 +1,55 @@
 import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { UniversalIdRecord } from '../types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
-}
-
 const secretKeyPatterns = [/^sb_secret/i, /^service_role/i, /secret/i];
-if (secretKeyPatterns.some((pattern) => pattern.test(SUPABASE_ANON_KEY))) {
-  throw new Error('Unsafe Supabase key detected in browser build. Use the public anon key only.');
+
+let supabaseClient: SupabaseClient | null = null;
+
+/**
+ * Lazily create (and validate) the Supabase client.
+ *
+ * IMPORTANT: This module must NEVER throw while it is being imported. Previously it
+ * threw at module-load time when the Supabase env vars were missing, which crashed the
+ * entire React bundle before it could mount — producing a completely blank page (only
+ * the inline favicon rendered). The client is now created on first use, and a clear,
+ * actionable error is thrown only when a Supabase-backed feature is actually invoked
+ * without configuration. All other pages render normally without Supabase.
+ */
+function getSupabaseClient(): SupabaseClient {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(
+      'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env.local file, then restart the dev server.'
+    );
+  }
+
+  if (secretKeyPatterns.some((pattern) => pattern.test(SUPABASE_ANON_KEY))) {
+    throw new Error('Unsafe Supabase key detected in browser build. Use the public anon key only.');
+  }
+
+  if (!supabaseClient) {
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+
+  return supabaseClient;
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/**
+ * Lazy proxy around the Supabase client. Accessing any property initializes the client
+ * on demand, so importing this module never throws at load time. Methods are bound to
+ * the underlying client so `supabase.from(...)`, `supabase.rpc(...)`, etc. work exactly
+ * as before.
+ */
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const client = getSupabaseClient();
+    const value = (client as unknown as Record<string | symbol, unknown>)[prop];
+    return typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(client) : value;
+  },
+});
 
 const ACTIVE_USER_ID_KEY = 'ugt_supabase_active_user_id';
 

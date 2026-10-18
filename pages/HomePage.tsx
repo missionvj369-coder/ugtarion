@@ -55,7 +55,48 @@ const HomePage: React.FC<HomePageProps> = ({ onOpenIdModal }) => {
         eyebrow="Universal Guard Trust"
         title="What Would Humanity Build If It Finally Worked Together?"
         subtitle="Universal Guard Trust (UGT) is a living framework dedicated to human evolution, human flourishing and the conscious transformation of civilization."
-      />
+      >
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <CTAButton label="Claim Your Universal ID" onClick={onOpenIdModal} />
+          <CTAButton label="Explore the Blueprint" to="/blueprint" variant="outline" />
+        </div>
+        <div className="mt-12 flex items-stretch justify-center gap-6 sm:gap-10">
+          {[
+            { value: '10', label: 'Forms of Intelligence' },
+            { value: '15', label: 'Blueprint Systems' },
+            { value: '8', label: 'Creation Loop Steps' },
+          ].map((stat, i) => (
+            <div key={stat.label} className={`px-2 sm:px-4 text-center ${i > 0 ? 'border-l border-zinc-200' : ''}`}>
+              <p className="font-serif text-3xl sm:text-4xl font-medium text-zinc-900 tabular-nums">{stat.value}</p>
+              <p className="mt-1.5 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-zinc-500">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </PageHero>
+
+      {/* Living proof — an interactive taste of the framework, linking to /technology */}
+      <section className="py-20 sm:py-24 bg-gradient-to-b from-[#0b0b12] via-[#0e0e18] to-[#0b0b12] text-white relative overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute top-0 left-1/4 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute bottom-0 right-1/4 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl" />
+        <div className="relative max-w-4xl mx-auto px-6 sm:px-8 text-center">
+          <FadeIn>
+            <p className="text-xs sm:text-sm font-semibold tracking-[0.25em] uppercase text-amber-300/90 mb-5">
+              Not a Claim · A Demonstration
+            </p>
+            <h2 className="font-serif text-3xl sm:text-5xl font-normal tracking-tight leading-tight text-balance">
+              We don't just describe Integrated Intelligence. We built it.
+            </h2>
+            <p className="mt-6 text-lg text-zinc-400 font-light max-w-2xl mx-auto leading-relaxed">
+              UGT's framework is an experience you can operate, not only read. Combine the ten forms of
+              intelligence and watch a synthesis emerge — live, in your browser, with no accounts and no keys.
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <CTAButton label="Enter the Living Environment" to="/technology" variant="primary" />
+              <CTAButton label="Explore the Blueprint" to="/blueprint" variant="outlineLight" />
+            </div>
+          </FadeIn>
+        </div>
+      </section>
 
       <FadeIn><GratitudeSection /></FadeIn>
 

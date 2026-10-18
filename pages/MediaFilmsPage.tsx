@@ -51,7 +51,7 @@ const MediaFilmsPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-3">
-                <span className="px-4 py-2 bg-amber-50 text-amber-700 rounded-lg text-sm">In Production</span>
+                <span className="px-4 py-2 bg-amber-50 text-zinc-900 rounded-lg text-sm">In Production</span>
               </div>
             </div>
           </div>
@@ -68,7 +68,7 @@ const MediaFilmsPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-3">
-                <span className="px-4 py-2 bg-amber-50 text-amber-700 rounded-lg text-sm">In Development</span>
+                <span className="px-4 py-2 bg-amber-50 text-zinc-900 rounded-lg text-sm">In Development</span>
               </div>
             </div>
           </div>
