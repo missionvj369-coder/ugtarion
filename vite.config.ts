@@ -1,6 +1,25 @@
 import path from 'path';
+import fs from 'fs';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+
+// Cloudflare Pages serves 404.html for any unmatched path (HTTP 404, but the
+// HTML still renders). Since the site uses hash-based routing, copying
+// index.html to 404.html lets every deep link fall back to the app shell
+// WITHOUT needing a /* catch-all redirect (which caused infinite loops).
+function spa404Fallback() {
+  return {
+    name: 'spa-404-fallback',
+    apply: 'build' as const,
+    closeBundle() {
+      const dist = path.resolve(__dirname, 'dist');
+      const index = path.join(dist, 'index.html');
+      if (fs.existsSync(index)) {
+        fs.copyFileSync(index, path.join(dist, '404.html'));
+      }
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
@@ -16,7 +35,7 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-      plugins: [react()],
+      plugins: [react(), spa404Fallback()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
