@@ -22,3 +22,19 @@ directory = "dist"
 # /password-reset, etc.) render the SPA shell instead of a raw 404.
 # (Cloudflare Pages does this automatically; Workers assets require this key.)
 not_found_handling = "404-page"
+
+# Cloudflare D1 (SQLite) backing store for the UGT registry.
+# Replaces Supabase Postgres when the Worker/API path is used.
+# Create once:  npx wrangler d1 create ugtarion
+# Then paste the returned database_id below (never commit secrets here;
+# the id is not secret, but keep it accurate per environment).
+# Apply migrations in order:
+#   npx wrangler d1 execute ugtarion --remote --file=supabase/migrations/001_create_profiles_and_standings.d1.sql
+#   npx wrangler d1 execute ugtarion --remote --file=supabase/migrations/002_auth_system.d1.sql
+#   npx wrangler d1 execute ugtarion --remote --file=supabase/migrations/003_otp_and_tokens.d1.sql
+#   npx wrangler d1 execute ugtarion --remote --file=supabase/migrations/004_password_reset.d1.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "ugtarion"
+database_id = "REPLACE_WITH_WRANGLER_D1_ID"
+migrations_dir = "supabase/migrations"

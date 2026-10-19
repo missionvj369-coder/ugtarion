@@ -14,6 +14,13 @@ dist-ssr
 
 # Server-only environment file (contains Supabase service role key)
 .env.server
+.env.server.bak
+
+# Legacy D1 helper scripts with hardcoded ids/paths (archived, not used)
+scripts/database-setup.cjs
+scripts/execute-d1-parts.cjs
+scripts/migrate-to-d1.mjs
+run-migration.bat
 
 # Environment files with secrets - never commit these
 .env

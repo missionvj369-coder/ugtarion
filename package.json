@@ -8,7 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "api": "node server/index.js",
-    "start:api": "node server/index.js"
+    "start:api": "node server/index.js",
+    "migrate:d1": "node scripts/migrate-d1.cjs --local",
+    "migrate:d1:remote": "node scripts/migrate-d1.cjs --remote",
+    "test:d1": "node scripts/test-d1-schema.mjs"
   },
   "dependencies": {
     "@sentry/browser": "^10.66.0",
