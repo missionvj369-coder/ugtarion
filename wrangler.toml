@@ -36,5 +36,5 @@ not_found_handling = "404-page"
 [[d1_databases]]
 binding = "DB"
 database_name = "ugtarion"
-database_id = "REPLACE_WITH_WRANGLER_D1_ID"
+database_id = "3d85816d-83aa-4ebd-abee-ae4cea5e056d"
 migrations_dir = "supabase/migrations"
