@@ -20,9 +20,14 @@ npm run build
 npm run deploy              # npx wrangler deploy
 ```
 
-In the Cloudflare dashboard, set the Deploy command to `npm run deploy`
-(Workers) or `npx wrangler pages deploy dist` (Pages). Both serve the same
-dist/ output.
+In the Cloudflare dashboard (Workers Builds, connected to git), set:
+- Build command: `npm ci && npm run build` (creates the gitignored dist/)
+- Deploy command: `npx wrangler deploy` (uploads dist/ as Worker assets)
+Do NOT merge the build into the Deploy command and do NOT set the Deploy
+command to `npm run deploy` — Workers Builds runs Build first, then Deploy,
+in the same /opt/buildhome/repo checkout. A bare `wrangler deploy` as the
+Deploy command with an empty Build command is exactly what produces
+`assets.directory /opt/buildhome/repo/dist does not exist`.
 
 3) Secrets (optional - only for features that need them):
 

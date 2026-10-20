@@ -1,14 +1,17 @@
 # Cloudflare configuration - Worker with static assets (`wrangler deploy`).
-# The Deploy command in the dashboard MUST be `npm run deploy`
-# (= `vite build` + `wrangler deploy`) so the gitignored dist/ exists.
+#
+# WORKERS BUILDS (dashboard connected to git) — REQUIRED SETTINGS:
+#   Build command:  npm ci && npm run build
+#   Deploy command: npx wrangler deploy
+# Do NOT put the build inside the Deploy command. Workers Builds runs
+# Build first (creates gitignored dist/), then Deploy (uploads it).
 # This fixes: The directory specified by the "assets.directory" field
 # (/opt/buildhome/repo/dist) does not exist.
 #
 # NOTE: Worker names and Pages project names share one namespace. If the
 # deploy errors with "a Worker with this name already exists" (i.e. the
 # Cloudflare project is a classic Pages project), EITHER convert it to a
-# Worker OR change the dashboard Deploy command to
-# `npm run build && npx wrangler pages deploy dist`.
+# Worker OR use `npx wrangler pages deploy dist` as the Deploy command.
 
 name = "ugtglobal"
 main = "worker/index.js"
