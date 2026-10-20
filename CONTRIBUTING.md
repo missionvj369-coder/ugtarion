@@ -142,7 +142,7 @@ Do not assume AI-generated output is correct.
 For changes affecting:
 
 * authentication
-* Supabase
+* Cloudflare Worker / D1
 * security
 * deployment
 * database schema

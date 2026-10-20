@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/react';
-import { BrowserTracing } from '@sentry/browser';
 
 // Sentry configuration
 // Get your DSN from https://sentry.io
@@ -15,12 +14,7 @@ export function initSentry() {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: SENTRY_ENVIRONMENT,
-    integrations: [
-      new BrowserTracing({
-        // Track performance for React components
-        tracePropagationTargets: ['localhost', /^\//],
-      }),
-    ],
+    integrations: [Sentry.browserTracingIntegration()],
     
     // Performance monitoring
     tracesSampleRate: 0.1, // 10% of transactions in production
@@ -53,7 +47,8 @@ export function initSentry() {
 }
 
 // Error boundary with Sentry integration
-export const SentryErrorBoundary = Sentry.withErrorBoundary(Sentry.withProfiler);
+// Usage: <SentryErrorBoundary fallback={<Fallback />}><App /></SentryErrorBoundary>
+export const SentryErrorBoundary = Sentry.ErrorBoundary;
 
 // Helper to capture custom errors
 export function captureError(error: Error, context?: Record<string, any>) {
@@ -73,9 +68,9 @@ export function captureMessage(message: string, level: Sentry.SeverityLevel = 'i
   }
 }
 
-// Performance monitoring helpers
-export function startTransaction(name: string, op: string = 'custom') {
-  return Sentry.startTransaction({ name, op });
+// Performance monitoring helpers (Sentry v8+ spans API)
+export function startSpan<T>(name: string, op: string = 'custom', callback: () => T): T {
+  return Sentry.startSpan({ name, op }, callback);
 }
 
 // Set user context for error tracking

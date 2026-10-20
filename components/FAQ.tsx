@@ -38,7 +38,7 @@ const faqData: FAQItem[] = [
   {
     category: 'General',
     question: 'Is my information safe with Universal Guard Trust?',
-    answer: 'Yes, protecting your information is our top priority. We implement industry-standard security measures including encryption of data in transit and at rest, secure password hashing, Row Level Security (RLS) in our database, and regular security audits. We never sell your personal information to third parties.'
+    answer: 'Yes, protecting your information is our top priority. We implement industry-standard security measures including encryption of data in transit and at rest, secure password hashing, database access isolated behind our Cloudflare Worker API, and regular security audits. We never sell your personal information to third parties.'
   },
   {
     category: 'General',
@@ -91,8 +91,8 @@ const faqData: FAQItem[] = [
   },
   {
     category: 'Security',
-    question: 'What is Row Level Security (RLS)?',
-    answer: 'Row Level Security is a database security feature that restricts access to specific rows based on user credentials. In our system, RLS ensures that you can only access your own data, preventing unauthorized access to other users\' information even if someone gains access to the database.'
+    question: 'How is access to my data controlled?',
+    answer: 'Your data lives in an encrypted database that can only be reached through our authenticated API - clients never connect to the database directly. Every request is validated server-side, so even if someone reverse-engineers the app, they cannot reach other users\' information.'
   },
   
   // Privacy

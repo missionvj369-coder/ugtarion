@@ -1,110 +1,79 @@
-# Universal Guard Trust - Website Stability, Security & Performance Checklist
+﻿# Universal Guard Trust - Website Stability, Security & Performance Checklist
 
-## ✅ ALREADY COMPLETED (Your Foundation)
+## Architecture (current)
 
-### Security (Phase 1 - COMPLETE)
-- [x] Environment variable validation
-- [x] Security headers (CSP, HSTS, X-Frame-Options, XSS Protection)
-- [x] CORS configuration
-- [x] Rate limiting (100 req/min global, 10/15min for auth)
-- [x] CSRF protection
-- [x] Password hashing (bcrypt)
-- [x] JWT with RS256
-- [x] Token refresh/rotation
-- [x] PKCE support
-
-### Stability (Phase 2 - COMPLETE)
-- [x] React ErrorBoundary component
-- [x] Global error handlers
-- [x] Retry logic with exponential backoff
-- [x] Circuit breaker pattern
-- [x] Health check endpoints (/health, /ready)
-
-### Performance (Phase 3 - COMPLETE)
-- [x] Lazy loading for VerificationPage
-- [x] Lazy loading for PasswordResetRequest/Confirm
-- [x] Code splitting with Suspense
-- [x] Tree-shaking enabled
-
-### Monitoring (Phase 4 - PARTIAL)
-- [x] Sentry error tracking setup (lib/sentry.ts)
-- [x] Uptime monitoring (HealthCheck component)
-- [ ] Log aggregation service
-- [ ] User engagement metrics
+Cloudflare-only: one Worker serves the built site (dist/ static assets) and
+the D1-backed registry API from a single origin. Password-reset emails are
+sent by the Worker via Brevo. There is no other backend.
 
 ---
 
-## 🔴 CRITICAL - Must Fix Before Production
+## CRITICAL - Must Do Before Production
 
-### 1. Environment Variables in Netlify
-Set these in **Netlify Dashboard → Environment Variables**:
+### 1. Worker Secrets
+Set with `wrangler secret put` (never in env files or the repo):
 
-| Variable | Value |
-|----------|-------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase service role key |
-| `BREVO_API_KEY` | Your Brevo API key |
-| `BREVO_SENDER_EMAIL` | Verified sender in Brevo |
-| `BREVO_TEMPLATE_ID` | 1 (your reset template) |
-| `VITE_AUTH_DOMAIN` | auth.ugt.org |
-| `VITE_PLATFORM_CLIENT_ID` | ugt_portal_client |
-| `VITE_PLATFORM_REDIRECT_URI` | https://your-domain.com/auth/callback |
-| `FRONTEND_URL` | https://your-domain.com |
+| Secret | Required | Purpose |
+|--------|----------|---------|
+| `BREVO_API_KEY` | yes (for reset emails) | Brevo API - without it the reset link is logged to the Worker console |
+| `BREVO_TEMPLATE_ID` | no (default 1) | Brevo reset template |
+| `BREVO_SENDER_EMAIL` | no | Verified sender in Brevo |
+| `BREVO_SENDER_NAME` | no | Sender display name |
+
+Frontend build env: none required (site and API share one origin).
+`VITE_API_BASE_URL` and `VITE_SENTRY_DSN` are optional overrides.
 
 ### 2. Database Migrations
-Run in Supabase SQL Editor:
-1. `supabase/fix-auth-functions.sql` - Auth functions
-2. `supabase/migrations/007_rls_policies.sql` - RLS policies
+```bash
+npm run migrate:d1          # local (wrangler dev state)
+npm run migrate:d1:remote   # production D1
+```
 
 ### 3. Brevo Email Template Setup
-1. Login to Brevo → Templates → Create New
+1. Login to Brevo > Templates > Create New
 2. Create template with:
    - Subject: "Reset Your Universal Guard Trust Password"
    - Add button/link: `{{ params.RESET_URL }}`
-3. Note the Template ID and set `BREVO_TEMPLATE_ID` in Netlify
+3. Note the Template ID and set `BREVO_TEMPLATE_ID` as a Worker secret
 
 ### 4. Test Complete Auth Flow
 ```bash
-# Test registration
-node scripts/test-register.mjs
-
-# Test login
-node scripts/test-login.mjs
-
-# Test password reset
-node scripts/test-password-flow.mjs
+# terminal 1: start the Worker + D1
+npm run dev:worker
+# terminal 2: run the API smoke tests
+npm run test:api
+node scripts/e2eTests.js
 ```
 
 ---
 
-## 🟡 HIGH PRIORITY - Should Implement
+## HIGH PRIORITY - Should Implement
 
 ### Performance Optimization
 - [ ] **Bundle Analysis**: Run `npm run build` and check for large JS files
 - [ ] **Image Optimization**: Convert images to WebP/AVIF
-- [ ] **Cache-Control Headers**: Configure in netlify.toml
+- [ ] **Cache-Control Headers**: Configure Cache-Control for static assets (Cloudflare dashboard or a Worker rule)
 - [ ] **Service Worker**: Add offline support
 - [ ] **Font Subsetting**: Only load needed characters
 - [ ] **Critical CSS Inlining**: Inline critical styles
 - [ ] **Preconnect/Prefetch**: Add resource hints
 
 ### Security Hardening
-- [ ] **Input Validation**: Add validation on all API endpoints
-- [ ] **Request Size Limits**: Prevent large payload attacks
+- [ ] **Input Validation**: Review validation on all Worker API endpoints
+- [ ] **Request Size Limits**: Enforce body-size limits in the Worker
 - [ ] **API Versioning**: Add /v1/ prefix for future-proofing
 - [ ] **Penetration Testing**: Run security scans
 - [ ] **Dependency Audit**: `npm audit`
 
 ### Monitoring & Logging
-- [ ] **Sentry Configuration**: Add DSN and configure in Netlify
+- [ ] **Sentry Configuration**: Set `VITE_SENTRY_DSN` at build time
 - [ ] **Uptime Monitoring**: Use Better Uptime or similar
-- [ ] **Log Aggregation**: Set up Datadog/Loggly
+- [ ] **Log Aggregation**: Cloudflare Workers Logs / Datadog
 - [ ] **Alerting**: Configure alerts for errors/downtime
 
 ---
 
-## 🟢 NICE TO HAVE - Future Improvements
+## NICE TO HAVE - Future Improvements
 
 ### SEO & Accessibility
 - [ ] Meta tags (title, description, OG tags)
@@ -117,32 +86,34 @@ node scripts/test-password-flow.mjs
 - [ ] Color contrast compliance
 
 ### Testing
-- [ ] Unit tests (Jest/Vitest)
+- [ ] Unit tests (Vitest)
 - [ ] Integration tests
-- [ ] E2E tests (Playwright/Cypress)
+- [ ] E2E tests (Playwright)
 - [ ] Load testing (k6/Artillery)
 - [ ] Security scanning (SAST/DAST)
 
 ### CI/CD
-- [ ] Automated testing on push
+- [x] Build on push (GitHub Actions)
+- [ ] Automated D1 migration check in CI (`npm run test:d1`)
 - [ ] Code quality checks (lint, format)
 - [ ] Automated deployments
 - [ ] Rollback strategy
 - [ ] Feature flags
 
 ### Database
-- [ ] Connection pooling
-- [ ] Automated backups
-- [ ] Point-in-time recovery
-- [ ] Encryption at rest
+- [x] D1 Time Travel (point-in-time restore)
+- [ ] Automated exports / backups
 
 ---
 
-## 📋 QUICK VERIFICATION COMMANDS
+## QUICK VERIFICATION COMMANDS
 
 ```bash
 # Check for TypeScript errors
 npx tsc --noEmit
+
+# Offline D1 schema smoke test
+npm run test:d1
 
 # Check for exposed secrets
 grep -rn "password\|secret\|api_key" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules .
@@ -153,25 +124,26 @@ npm run build && ls -la dist/assets/*.js
 # Audit dependencies
 npm audit
 
-# Test auth flow
-node scripts/test-auth-flow.mjs
+# API smoke tests (Worker must be running)
+npm run test:api
 ```
 
 ---
 
-## 🎯 IMMEDIATE ACTION ITEMS (Do These First)
+## IMMEDIATE ACTION ITEMS (Do These First)
 
-1. **Set Netlify Environment Variables** ⬅️ MOST IMPORTANT
-2. **Run Database Migrations** in Supabase SQL Editor
-3. **Configure Brevo Email Template** with `{{ params.RESET_URL }}`
-4. **Test Registration** on production site
-5. **Test Password Reset** flow
-6. **Set up Sentry** with your DSN
-7. **Configure Uptime Monitoring**
+1. **Run Database Migrations** (`npm run migrate:d1:remote`)
+2. **Deploy the Worker** (`npm run deploy`)
+3. **Set BREVO_API_KEY** (`npx wrangler secret put BREVO_API_KEY`)
+4. **Configure Brevo Email Template** with `{{ params.RESET_URL }}`
+5. **Test Registration** on production site
+6. **Test Password Reset** flow
+7. **Set up Sentry** with your DSN
+8. **Configure Uptime Monitoring**
 
 ---
 
-## 📊 Core Web Vitals Targets
+## Core Web Vitals Targets
 
 | Metric | Target | Current Status |
 |--------|--------|----------------|
@@ -181,16 +153,15 @@ node scripts/test-auth-flow.mjs
 
 ---
 
-## 🆘 Emergency Contacts
+## Emergency Contacts
 
 | Service | Contact |
 |---------|---------|
-| Hosting (Netlify) | support@netlify.com |
-| Database (Supabase) | support@supabase.io |
-| Email (Brevo) | support@brevo.com |
+| Hosting (Cloudflare) | https://support.cloudflare.com |
+| Email (Brevo) | https://help.brevo.com |
 | Security Issues | security@ugtglobal.space |
 
 ---
 
-*Last Updated: 2026-07-20*
-*Version: 1.0*
+*Last Updated: 2026-10-19*
+*Version: 2.0 (Cloudflare-only)*

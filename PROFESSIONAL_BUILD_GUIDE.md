@@ -160,7 +160,6 @@ lib/
 ├── stability.ts    # Retry, circuit breaker, caching
 ├── session.ts       # Session management
 ├── apiClient.ts    # API client with fallback
-├── supabaseClient.ts # Supabase integration
 └── ...
 
 components/

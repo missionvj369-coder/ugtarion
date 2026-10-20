@@ -145,7 +145,7 @@ export class CircuitBreaker {
 }
 
 // Create circuit breakers for different services
-export const supabaseCircuitBreaker = new CircuitBreaker({
+export const d1CircuitBreaker = new CircuitBreaker({
   failureThreshold: 5,
   resetTimeoutMs: 30000,
 });
@@ -400,7 +400,7 @@ export function createFallbackState<T>(
 export interface HealthStatus {
   healthy: boolean;
   services: {
-    supabase: ServiceHealth;
+    d1: ServiceHealth;
     api: ServiceHealth;
     email: ServiceHealth;
   };
@@ -442,23 +442,17 @@ export async function checkServiceHealth(
 }
 
 export async function performHealthCheck(): Promise<HealthStatus> {
-  const supabaseCheck = checkServiceHealth('supabase', async () => {
-    const { supabase } = await import('./supabaseClient');
-    await supabase.from('profiles').select('id').limit(1);
-  });
-
-  const apiCheck = checkServiceHealth('api', async () => {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/health`);
+  const apiCheck = await checkServiceHealth('api', async () => {
+    const base = import.meta.env.VITE_API_BASE_URL || '';
+    const response = await fetch(`${base}/api/health`);
     if (!response.ok) throw new Error('API unhealthy');
   });
 
-  const [supabase, api] = await Promise.all([supabaseCheck, apiCheck]);
-
   return {
-    healthy: supabase.healthy && api.healthy,
+    healthy: apiCheck.healthy,
     services: {
-      supabase,
-      api,
+      d1: apiCheck, // D1 via Worker; health is reported by /api/health
+      api: apiCheck,
       email: { healthy: true }, // Email service health is hard to check client-side
     },
     timestamp: Date.now(),

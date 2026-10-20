@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import SectionWrapper from './SectionWrapper';
-import { resetPassword } from '../lib/supabaseClient';
+import { confirmPasswordReset } from '../lib/apiClient';
 import { ArrowLeftIcon, LockIcon, AlertCircleIcon, CheckCircleIcon, Loader2Icon, EyeIcon, EyeOffIcon } from './icons';
 
 interface PasswordResetConfirmProps {
@@ -68,7 +68,7 @@ export function PasswordResetConfirm({ onBackToLogin }: PasswordResetConfirmProp
     setStatus('loading');
 
     try {
-      const response = await resetPassword(token, password);
+      const response = await confirmPasswordReset(token, password);
       setStatus('success');
       setMessage(response.message || 'Password has been successfully reset. Please log in with your new password.');
       

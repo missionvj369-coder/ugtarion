@@ -1,15 +1,17 @@
-# Cloudflare configuration - supports BOTH deploy paths:
-#   1. `npx wrangler deploy` (the Deploy command set in the Cloudflare dashboard)
-#      -> uploads dist/ as a Worker with static assets
-#   2. `npx wrangler pages deploy dist` (classic Pages deploy)
-# Both use the same dist/ output, so either dashboard setting works.
+# Cloudflare configuration - Worker with static assets (`wrangler deploy`).
+# The Deploy command in the dashboard MUST be `npm run deploy`
+# (= `vite build` + `wrangler deploy`) so the gitignored dist/ exists.
+# This fixes: The directory specified by the "assets.directory" field
+# (/opt/buildhome/repo/dist) does not exist.
 #
 # NOTE: Worker names and Pages project names share one namespace. If the
-# deploy errors with "a Worker named ugtglobal already exists" (i.e. the
-# project is a classic Pages project), change the dashboard Deploy command
-# to `npx wrangler pages deploy dist` instead.
+# deploy errors with "a Worker with this name already exists" (i.e. the
+# Cloudflare project is a classic Pages project), EITHER convert it to a
+# Worker OR change the dashboard Deploy command to
+# `npm run build && npx wrangler pages deploy dist`.
 
 name = "ugtglobal"
+main = "worker/index.js"
 compatibility_date = "2026-10-18"
 
 # Used by `wrangler pages deploy` (default output dir)
@@ -20,5 +22,14 @@ pages_build_output_dir = "dist"
 directory = "dist"
 # Serve dist/404.html for unmatched paths so deep links (/verify/:token,
 # /password-reset, etc.) render the SPA shell instead of a raw 404.
-# (Cloudflare Pages does this automatically; Workers assets require this key.)
+# (vite.config.ts copies index.html -> 404.html on every build.)
 not_found_handling = "404-page"
+
+# Cloudflare D1 (SQLite) backing store for the UGT registry.
+# Apply migrations in order:
+#   npm run migrate:d1:remote
+[[d1_databases]]
+binding = "DB"
+database_name = "ugtarion"
+database_id = "3d85816d-83aa-4ebd-abee-ae4cea5e056d"
+migrations_dir = "migrations"

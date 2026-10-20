@@ -5,22 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:worker": "wrangler dev",
     "build": "vite build",
     "preview": "vite preview",
-    "api": "node server/index.js",
-    "start:api": "node server/index.js"
+    "deploy": "npm run build && wrangler deploy",
+    "migrate:d1": "node scripts/migrate-d1.cjs --local",
+    "migrate:d1:remote": "node scripts/migrate-d1.cjs --remote",
+    "test:d1": "node scripts/test-d1-schema.mjs",
+    "test:scenarios": "node scripts/test-user-scenarios.mjs",
+    "test:api": "node scripts/e2eTests.js"
   },
   "dependencies": {
     "@sentry/browser": "^10.66.0",
     "@sentry/react": "^10.66.0",
-    "@supabase/supabase-js": "^2.110.1",
-    "@types/jsonwebtoken": "^9.0.10",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "html5-qrcode": "^2.3.8",
-    "jose": "^6.2.3",
-    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.23.0",
     "motion": "^12.42.2",
     "qrcode.react": "^4.2.0",
@@ -28,19 +25,12 @@
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.18.1"
   },
-  "optionalDependencies": {
-    "express-rate-limit": "^6.8.0",
-    "helmet": "^7.0.0",
-    "zod": "^3.22.4"
-  },
   "devDependencies": {
-    "@iarna/toml": "^2.2.5",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.0",
     "terser": "^5.50.0",
-    "tsx": "^4.23.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

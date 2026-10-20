@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 *.log
 npm-debug.log*
@@ -12,14 +12,16 @@ dist
 dist-ssr
 *.local
 
-# Server-only environment file (contains Supabase service role key)
-.env.server
+# Cloudflare Wrangler local state (wrangler dev / d1 --local)
+.wrangler
 
 # Environment files with secrets - never commit these
 .env
 .env.local
 .env.production
 .env.*.local
+.env.server
+.env.server.bak
 
 # Editor directories and files
 .vscode/*
