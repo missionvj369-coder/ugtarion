@@ -41,7 +41,7 @@ Examples include:
 
 - Authentication bypass
 - Authorization failures
-- Supabase/RLS vulnerabilities
+- D1 / Worker API vulnerabilities
 - Exposure of service credentials
 - API key leakage
 - Cross-site scripting
@@ -73,7 +73,7 @@ Never commit:
 - `.env`
 - `.env.local`
 - production credentials
-- Supabase service-role keys
+- Cloudflare/Brevo API keys
 - private API keys
 - passwords
 - private tokens

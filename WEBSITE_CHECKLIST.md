@@ -4,7 +4,7 @@
 
 ### Environment & Configuration
 - [x] Environment variable validation on server startup
-- [x] Required env vars checked in production (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, BREVO_API_KEY)
+- [x] Optional env vars documented (BREVO_API_KEY Worker secret; VITE_API_BASE_URL/VITE_SENTRY_DSN optional)
 - [x] No hardcoded secrets in codebase
 - [x] Environment-specific configurations (dev vs production)
 
@@ -113,8 +113,8 @@
 ## ✅ Phase 5: Database & Backend (PARTIALLY COMPLETED)
 
 ### Database Security
-- [x] Row Level Security (RLS) policies for all tables (supabase/migrations/007_rls_policies.sql)
-- [x] Parameterized queries (prevent SQL injection) - via Supabase client
+- [x] Access isolated behind the Cloudflare Worker (no direct D1 access from clients)
+- [x] Parameterized queries (prevent SQL injection) - via D1 prepared statements
 - [ ] Connection pooling configuration
 - [ ] Database backup strategy
 - [ ] Point-in-time recovery enabled
@@ -314,7 +314,7 @@
 1. Performance optimization (images, caching)
 2. E2E testing setup
 3. CI/CD pipeline improvements
-4. Database RLS policies
+4. Database backup strategy
 5. Load testing
 
 ### Medium-term (Month 2)
@@ -378,8 +378,8 @@ Recommended metrics to track:
 
 | Service | Contact | Escalation |
 |---------|---------|------------|
-| Hosting Support | support@netlify.com | |
-| Database Support | support@supabase.io | |
+| Hosting Support | https://support.cloudflare.com | |
+| Email (Brevo) | https://help.brevo.com | |
 | Domain Registrar | [Your registrar] | |
 | Security Incidents | security@ugtglobal.space | |
 

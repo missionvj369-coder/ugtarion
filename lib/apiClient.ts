@@ -1,29 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
-const ACTIVE_USER_ID_KEY = 'ugt_supabase_active_user_id';
-
-// Direct Supabase client for fallback when API server is unavailable
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../types';
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Typed client for table operations (with full type safety)
-let typedSupabaseClient: ReturnType<typeof createClient<Database>> | null = null;
-function getTypedSupabaseClient() {
-  if (!typedSupabaseClient && SUPABASE_URL && SUPABASE_ANON_KEY) {
-    typedSupabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
-  return typedSupabaseClient;
-}
-
-// Untyped client for RPC calls (avoids strict type inference issues with function args)
-let untypedSupabaseClient: ReturnType<typeof createClient> | null = null;
-function getUntypedSupabaseClient() {
-  if (!untypedSupabaseClient && SUPABASE_URL && SUPABASE_ANON_KEY) {
-    untypedSupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
-  return untypedSupabaseClient;
-}
+const ACTIVE_USER_ID_KEY = 'ugt_active_user_id';
 
 interface ApiResult<T> {
   error?: string;
@@ -76,92 +52,27 @@ function transformProfile(raw: {
 }
 
 async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
-  let apiError: unknown = null;
-
-  // Try API server first
-  if (API_BASE_URL) {
-    try {
-      const response = await fetch(`${API_BASE_URL}${path}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        ...options,
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload?.error || response.statusText || 'API request failed.');
-      }
-      return payload as T;
-    } catch (err) {
-      apiError = err;
-      console.warn('API server request failed, falling back to direct Supabase:', err);
-      // Fall through to direct Supabase
-    }
-  }
-
-  // Fallback to direct Supabase RPC calls
-  const supabase = getUntypedSupabaseClient() as any;
-  if (!supabase) {
-    // Neither the API server nor Supabase is available. Surface a clear,
-    // actionable error instead of a raw "TypeError: Failed to fetch".
-    if (apiError instanceof TypeError && (apiError as Error).message.includes('fetch')) {
-      throw Object.assign(
-        new Error('Unable to reach the registry server. Please check your internet connection and try again.'),
-        { isNetworkError: true, originalError: apiError }
-      );
-    }
-    throw new Error('No API server configured and no Supabase client available');
-  }
-
-  // Map API paths to Supabase RPC calls
-  if (path === '/api/count' && options.method !== 'POST') {
-    const { count, error } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true });
-    if (error) throw new Error(error.message);
-    return { count: count || 0 } as T;
-  }
-
-  if (path === '/api/register' && options.method === 'POST') {
-    const body = JSON.parse(options.body as string);
-    const { data, error } = await supabase.rpc('register_user_atomic', {
-      p_name: body.name.trim(),
-      p_dob: body.dob,
-      p_email: body.email.trim().toLowerCase(),
-      p_phone: body.phone.trim(),
-      p_pincode: body.pincode.trim(),
-      p_city: body.city.trim(),
-      p_district: body.district.trim(),
-      p_state: body.state.trim(),
-      p_nation: body.nation.trim(),
+  // Same-origin by default: the Cloudflare Worker serves /api/* from D1.
+  const url = API_BASE_URL ? `${API_BASE_URL}${path}` : path;
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      ...options,
     });
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) throw new Error('Registration failed - no data returned');
-    return transformProfile(data[0]) as T;
-  }
 
-  if (path === '/api/login' && options.method === 'POST') {
-    const body = JSON.parse(options.body as string);
-    const { data, error } = await supabase.rpc('login_user_atomic', {
-      p_identifier: body.identifier.trim().toLowerCase(),
-    });
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) throw new Error('Universal ID or Email not found. Please check spelling or register first.');
-    return transformProfile(data[0]) as T;
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error((payload as any)?.error || response.statusText || 'API request failed.');
   }
-
-  if (path.startsWith('/api/profile/') && options.method !== 'POST') {
-    const uid = path.split('/api/profile/')[1];
-    const { data, error } = await supabase.rpc('login_user_atomic', {
-      p_identifier: uid.trim().toLowerCase(),
-    });
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) throw new Error('Profile not found.');
-    return transformProfile(data[0]) as T;
+  return payload as T;
+} catch (err) {
+    throw Object.assign(
+      new Error('Unable to reach the registry server. Please check your internet connection and try again.'),
+      { isNetworkError: true, originalError: err }
+    );
   }
-
-  throw new Error(`Unsupported path for direct Supabase fallback: ${path}`);
 }
 
 export interface UniversalIdRecord {
@@ -200,6 +111,7 @@ export async function registerUser(data: {
   district: string;
   state: string;
   nation: string;
+  password: string;
 }): Promise<UniversalIdRecord> {
   return apiRequest<UniversalIdRecord>('/api/register', {
     method: 'POST',
@@ -279,3 +191,4 @@ export async function confirmPasswordReset(
     body: JSON.stringify({ token, password }),
   });
 }
+

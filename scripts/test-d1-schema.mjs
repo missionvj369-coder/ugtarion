@@ -7,13 +7,8 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 const ROOT = path.join(import.meta.dirname ?? process.cwd(), '..');
-const DIR = path.join(process.cwd(), 'supabase', 'migrations');
-const FILES = [
-  '001_create_profiles_and_standings.d1.sql',
-  '002_auth_system.d1.sql',
-  '003_otp_and_tokens.d1.sql',
-  '004_password_reset.d1.sql',
-];
+const DIR = path.join(ROOT, 'migrations');
+const FILES = ['000_fresh_setup.d1.sql'];
 
 const EXPECTED_TABLES = [
   'profiles',

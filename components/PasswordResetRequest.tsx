@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SectionWrapper from './SectionWrapper';
-import { requestPasswordReset } from '../lib/supabaseClient';
+import { requestPasswordReset } from '../lib/apiClient';
 import { ArrowLeftIcon, MailIcon, AlertCircleIcon, CheckCircleIcon, Loader2Icon } from './icons';
 
 interface PasswordResetRequestProps {

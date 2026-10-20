@@ -224,7 +224,7 @@ const VerificationPage: React.FC = () => {
         }
       }
       
-      // If still no data, try direct Supabase query via API
+      // If still no data, try the public profile endpoint (Worker/D1)
       if (!profileData) {
         try {
           let response = await fetch(`${apiBaseUrl}/api/public/profile/${encodeURIComponent(cleanUid)}`);
@@ -240,48 +240,7 @@ const VerificationPage: React.FC = () => {
         }
       }
       
-      // If still no data, try direct Supabase REST API with both formats
-      if (!profileData) {
-        try {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-          if (supabaseUrl && supabaseKey) {
-            // Try with clean UID first
-            let response = await fetch(
-              `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(cleanUid)}&select=*`,
-              {
-                headers: {
-                  'apikey': supabaseKey,
-                  'Authorization': `Bearer ${supabaseKey}`,
-                }
-              }
-            );
-            
-            // If not found, try with original UID (may have UGT- prefix)
-            if (!response.ok || (await response.clone().json()).length === 0) {
-              response = await fetch(
-                `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(uid)}&select=*`,
-                {
-                  headers: {
-                    'apikey': supabaseKey,
-                    'Authorization': `Bearer ${supabaseKey}`,
-                  }
-                }
-              );
-            }
-            
-            if (response.ok) {
-              const profiles = await response.json();
-              if (profiles && profiles.length > 0) {
-                profileData = profiles[0];
-              }
-            }
-          }
-        } catch (e) {
-          // Continue to error if this fails
-        }
-      }
-      
+      // If still no data, throw error
       if (!profileData) {
         throw new Error('Universal ID not found in the registry. Please check the ID and try again.');
       }

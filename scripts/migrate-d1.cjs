@@ -1,5 +1,5 @@
 // UGTARION D1 Migration runner (Cloudflare D1 / SQLite).
-// Applies the ordered *.d1.sql files in supabase/migrations via wrangler.
+// Applies the ordered *.d1.sql files in migrations/ via wrangler.
 // Usage:
 //   node scripts/migrate-d1.cjs --local
 //   node scripts/migrate-d1.cjs --remote
@@ -13,7 +13,7 @@ const { promisify } = require('util');
 const execFileAsync = promisify(execFile);
 
 const DB_NAME = 'ugtarion';
-const MIGRATIONS_DIR = path.join(__dirname, '..', 'supabase', 'migrations');
+const MIGRATIONS_DIR = path.join(__dirname, '..', 'migrations');
 const MIGRATION_FILES = [
   '001_create_profiles_and_standings.d1.sql',
   '002_auth_system.d1.sql',

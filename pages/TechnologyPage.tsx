@@ -7,9 +7,9 @@ import { Cpu, Layers, ShieldCheck, GitBranch, Terminal, Boxes, Eye } from 'lucid
 
 const STACK: Array<{ icon: React.ReactNode; title: string; detail: string }> = [
   { icon: <Cpu className="w-5 h-5" />, title: 'React 19 + Vite 6', detail: 'A modern, concurrent UI runtime compiled and code-split for speed.' },
-  { icon: <Boxes className="w-5 h-5" />, title: 'Dual backend', detail: 'One API core runs on both an Express server and Netlify serverless functions.' },
+  { icon: <Boxes className="w-5 h-5" />, title: 'Edge-native backend', detail: 'One Cloudflare Worker serves the React site and the D1-backed registry API from a single origin.' },
   { icon: <ShieldCheck className="w-5 h-5" />, title: 'JWT RS256 + OAuth/OIDC', detail: 'Asymmetric token signing with PKCE authorization-code flow and QR login.' },
-  { icon: <Layers className="w-5 h-5" />, title: 'Supabase + Row-Level Security', detail: 'Postgres with policy-enforced data access and atomic RPCs.' },
+  { icon: <Layers className="w-5 h-5" />, title: 'Cloudflare D1 + Worker API', detail: 'SQLite at the edge with all reads and writes proxied through a single Worker.' },
   { icon: <GitBranch className="w-5 h-5" />, title: 'Open & inspectable', detail: 'The intelligence and graph engines on this page are committed source — no secrets.' },
   { icon: <Terminal className="w-5 h-5" />, title: 'Observability', detail: 'Sentry error tracking plus live API / database / auth health checks.' },
 ];

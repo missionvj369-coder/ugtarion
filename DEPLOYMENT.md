@@ -1,58 +1,55 @@
-Deployment Guide
+﻿Deployment Guide
 
-1) Set production environment variables (example `.env.production` on the server):
+Everything runs on Cloudflare: the Worker serves the built site (dist/ as
+static assets) and the D1-backed API from one origin. There is no other
+backend to deploy.
 
-```
-VITE_SUPABASE_URL=https://<your-project>.supabase.co
-VITE_SUPABASE_ANON_KEY=<your-public-anon-key>
-VITE_API_BASE_URL=https://api.yourdomain.com
-
-SUPABASE_SERVICE_ROLE_KEY=<your-service-role-secret>
-API_PORT=4000
-DEV_ORIGIN=https://your-frontend-domain.com
-```
-
-- `VITE_SUPABASE_ANON_KEY` is public and used by the browser bundle.
-- `SUPABASE_SERVICE_ROLE_KEY` is secret and must be stored only on the backend host or in a secret manager.
-
-2) Start the backend API (on server):
+1) One-time setup:
 
 ```bash
-# from project root
-npm install --production
-npm run start:api
+npx wrangler login
+npm run migrate:d1          # apply migrations to local D1
+npm run migrate:d1:remote   # apply migrations to production D1
 ```
 
-3) Build and deploy the frontend (on CI or build server):
+2) Build and deploy:
 
 ```bash
-# locally or CI
 npm ci
 npm run build
-# deploy the `dist/` static files to your CDN or static host
+npm run deploy              # npx wrangler deploy
 ```
 
-4) Run as a systemd service (example):
+In the Cloudflare dashboard, set the Deploy command to `npm run deploy`
+(Workers) or `npx wrangler pages deploy dist` (Pages). Both serve the same
+dist/ output.
 
+3) Secrets (optional - only for features that need them):
+
+```bash
+# Password-reset emails (Brevo). Without this secret the Worker logs the
+# reset link to its console instead of emailing it.
+npx wrangler secret put BREVO_API_KEY
+npx wrangler secret put BREVO_TEMPLATE_ID    # optional, default 1
+npx wrangler secret put BREVO_SENDER_EMAIL   # optional
+npx wrangler secret put BREVO_SENDER_NAME    # optional
 ```
-[Unit]
-Description=Universal Guard Trust API
-After=network.target
 
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/var/www/universal-guard-trust
-Environment="SUPABASE_SERVICE_ROLE_KEY=<your-service-role-secret>"
-Environment="API_PORT=4000"
-ExecStart=/usr/bin/node server/index.js
-Restart=on-failure
+Frontend environment variables: none required. The site and API share one
+origin. `VITE_API_BASE_URL` exists only as an override for split-origin setups
+(set it at build time if ever needed).
 
-[Install]
-WantedBy=multi-user.target
+4) Local development:
+
+```bash
+npm run dev:worker    # Worker + D1 at http://localhost:8787
+npm run dev           # Vite at http://localhost:3000 (proxies /api and /auth to :8787)
 ```
 
 5) Notes:
-- Use HTTPS and secure CORS policies for `VITE_API_BASE_URL`.
-- Use a secret manager (AWS Secrets Manager, Vault) if possible instead of plain `.env` files.
-- Ensure `SUPABASE_SERVICE_ROLE_KEY` is never published to the client or committed to git.
+
+- Use HTTPS (Cloudflare terminates TLS automatically).
+- The Worker is the single source of truth for all registry data; never grant
+  clients direct D1 access.
+- Keep secrets (Brevo keys, Cloudflare API tokens) out of the client bundle
+  and out of git. Worker secrets are stored with `wrangler secret put`.

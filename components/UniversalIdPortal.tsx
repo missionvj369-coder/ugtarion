@@ -57,12 +57,13 @@ import {
   getActiveUser,
   setActiveUserId,
   loginUser,
-  getProfileById
+  getProfileById,
+  requestPasswordReset
 } from '../lib/apiClient';
 import type { UniversalIdRecord } from '../lib/apiClient';
 import SectionWrapper from './SectionWrapper';
 import { createUGTAuthClient, UGTAuthClient } from '../lib/ugt-auth-client';
-import { registerUserWithPassword, loginWithPassword, signOutSupabase, requestPasswordReset, verifyPasswordResetToken, resetPassword } from '../lib/supabaseClient';
+
 import { QRCodeSVG } from 'qrcode.react';
 import { UgtLogoIcon, WhatsappIcon, LinkedInIcon, XIcon, FacebookIcon, InstagramIcon } from './icons';
 
@@ -735,7 +736,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
           setIsLoading(false);
           return;
         }
-        const newUser = await registerUserWithPassword({
+        const newUser = await registerUser({
           name,
           dob,
           email,
@@ -802,7 +803,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     }
 
     try {
-      const user = await loginWithPassword(loginIdentifier, loginPassword);
+      const user = await loginUser(loginIdentifier, loginPassword);
       setCurrentUser(user);
       setView('id-card');
       setSuccess('Consciousness aligned. Welcome back, Guardian.');

@@ -15,7 +15,8 @@ async function get(url) {
 }
 
 (async () => {
-  const base = 'http://localhost:4000/api';
+  // Hits the Cloudflare Worker directly (run `npx wrangler dev` first).
+  const base = process.env.API_BASE || 'http://localhost:8787/api';
   const timestamp = Date.now();
   // 1) Register
   const regPayload = {
@@ -27,22 +28,23 @@ async function get(url) {
     city: 'TestCity',
     district: 'TestDistrict',
     state: 'TestState',
-    nation: 'TestNation'
+    nation: 'TestNation',
+    password: 'Str0ngPass!xyz',
   };
 
   console.log('1) Registering new user...');
   const reg = await post(`${base}/register`, regPayload);
   console.log('   status', reg.status);
-  if (reg.status !== 200) return process.exit(2);
+  if (reg.status !== 201 && reg.status !== 200) return process.exit(2);
   const created = reg.body;
 
   console.log('2) Attempt duplicate register with same email...');
   const dup = await post(`${base}/register`, { ...regPayload, name: 'Duplicate' });
   console.log('   status', dup.status);
-  if (dup.status === 200) { console.error('Duplicate registration unexpectedly succeeded'); return process.exit(3); }
+  if (dup.status === 200 || dup.status === 201) { console.error('Duplicate registration unexpectedly succeeded'); return process.exit(3); }
 
-  console.log('3) Login with identifier (email or universal id)...');
-  const login = await post(`${base}/login`, { identifier: regPayload.email });
+  console.log('3) Login with identifier (email or universal id) + password...');
+  const login = await post(`${base}/login`, { identifier: regPayload.email, password: regPayload.password });
   console.log('   status', login.status);
   if (login.status !== 200) { console.error('Login failed'); return process.exit(4); }
 

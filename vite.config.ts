@@ -28,8 +28,15 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
         proxy: {
+          // Dev: forward API + password-reset calls to the Cloudflare Worker
+          // (`npx wrangler dev`, default http://localhost:8787).
           '/api': {
-            target: 'http://localhost:4000',
+            target: 'http://localhost:8787',
+            changeOrigin: true,
+            secure: false,
+          },
+          '/auth': {
+            target: 'http://localhost:8787',
             changeOrigin: true,
             secure: false,
           },
@@ -60,12 +67,6 @@ export default defineConfig(({ mode }) => {
                 }
                 if (id.includes('lucide-react')) {
                   return 'vendor-lucide';
-                }
-                if (id.includes('@supabase')) {
-                  return 'vendor-supabase';
-                }
-                if (id.includes('jose') || id.includes('jsonwebtoken')) {
-                  return 'vendor-auth';
                 }
                 return 'vendor-misc';
               }
@@ -120,7 +121,7 @@ export default defineConfig(({ mode }) => {
       },
       // Optimize dependencies
       optimizeDeps: {
-        include: ['react', 'react-dom', 'motion/react', 'lucide-react', '@supabase/supabase-js'],
+        include: ['react', 'react-dom', 'motion/react', 'lucide-react'],
         exclude: [],
       },
     };

@@ -1,6 +1,9 @@
 (async () => {
   const fetch = globalThis.fetch;
-  const url = 'http://localhost:4000/api/register';
+  // Hits the Cloudflare Worker directly (run `npx wrangler dev` first).
+  const url = process.env.API_BASE
+    ? `${process.env.API_BASE}/register`
+    : 'http://localhost:8787/api/register';
   const timestamp = Date.now();
   const payload = {
     name: `Test User ${timestamp}`,
@@ -11,7 +14,8 @@
     city: 'Testville',
     district: 'Testdistrict',
     state: 'Teststate',
-    nation: 'Testland'
+    nation: 'Testland',
+    password: 'Str0ngPass!xyz',
   };
 
   const maxAttempts = 25;
