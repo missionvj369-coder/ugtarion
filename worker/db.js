@@ -67,7 +67,7 @@ export async function nextUniversalId(db) {
   return `UGT-${letter}${String(digitPart).padStart(8, '0')}`;
 }
 
-function rankQueries() {
+function rankQueries(where) {
   const scopes = {
     universe_rank: '',
     nation_rank: 'AND nation = p.nation',
@@ -79,7 +79,7 @@ function rankQueries() {
   const scoped = Object.entries(scopes)
     .map(([k, cond]) => `(SELECT COUNT(*) + 1 FROM profiles WHERE created_at < p.created_at ${cond}) AS ${k}`)
     .join(', ');
-  return `SELECT p.*, (SELECT COUNT(*) FROM profiles) AS global_order, ${scoped} FROM profiles p`;
+  return `SELECT p.*, (SELECT COUNT(*) FROM profiles) AS global_order, ${scoped} FROM profiles p WHERE ${where}`;
 }
 
 export async function findProfile(db, identifier) {
