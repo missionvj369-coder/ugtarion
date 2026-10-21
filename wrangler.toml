@@ -1,28 +1,37 @@
 # Cloudflare configuration - Worker with static assets (`wrangler deploy`).
 #
+# The Worker serves BOTH the built site (dist/ as static assets) AND the
+# D1-backed API (/api/*, /auth/*) from one origin: ugtglobal.space.
+#
 # WORKERS BUILDS (dashboard connected to git) — REQUIRED SETTINGS:
 #   Build command:  npm ci && npm run build
 #   Deploy command: npx wrangler deploy
 # Do NOT put the build inside the Deploy command. Workers Builds runs
 # Build first (creates gitignored dist/), then Deploy (uploads it).
-# This fixes: The directory specified by the "assets.directory" field
-# (/opt/buildhome/repo/dist) does not exist.
 #
-# NOTE: Worker names and Pages project names share one namespace. If the
-# deploy errors with "a Worker with this name already exists" (i.e. the
-# Cloudflare project is a classic Pages project), EITHER convert it to a
-# Worker OR use `npx wrangler pages deploy dist` as the Deploy command.
+# NOTE: Worker names and Pages project names share one namespace. The
+# deployed script is named `ugtarion` (matching the Pages project name is
+# fine because the Pages project's own worker is `ugtarion-production`).
 
-name = "ugtglobal"
+name = "ugtarion"
 main = "worker/index.js"
-compatibility_date = "2026-10-18"
+compatibility_date = "2026-10-20"
 
-# Used by `wrangler pages deploy` (default output dir)
-pages_build_output_dir = "dist"
+# Route both apex and www to this Worker. DNS is already proxied (orange
+# cloud) for both hostnames, so no DNS change is required.
+routes = [
+  { pattern = "ugtglobal.space/*", zone_name = "ugtglobal.space" },
+  { pattern = "www.ugtglobal.space/*", zone_name = "ugtglobal.space" },
+]
 
 # Used by `wrangler deploy` (Worker static assets)
 [assets]
 directory = "dist"
+binding = "ASSETS"
+# Only /api/* and /auth/* must hit the Worker; all other requests are
+# served straight from static assets. Without this, /api/health returns
+# the SPA shell (the Pages bug we are fixing).
+run_worker_first = ["/api/*", "/auth/*"]
 # Serve dist/404.html for unmatched paths so deep links (/verify/:token,
 # /password-reset, etc.) render the SPA shell instead of a raw 404.
 # (vite.config.ts copies index.html -> 404.html on every build.)
