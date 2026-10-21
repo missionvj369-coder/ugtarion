@@ -45,3 +45,11 @@ binding = "DB"
 database_name = "ugtarion"
 database_id = "3d85816d-83aa-4ebd-abee-ae4cea5e056d"
 migrations_dir = "migrations"
+
+[vars]
+SENDER_EMAIL = "soulconnect@ugtglobal.space"
+SENDER_NAME = "Universal Guard Trust"
+BREVO_TEMPLATE_ID = "1"
+# BREVO_API_KEY is a secret — set via:
+#   npx wrangler secret put BREVO_API_KEY
+# (do NOT put it in [vars]; wrangler.toml is committed to git)

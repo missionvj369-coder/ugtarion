@@ -12,23 +12,24 @@ export function cryptoRandomId() {
 }
 
 export async function sha256Hex(input) {
-  const digest = await crypto.subtle.digest('sha256', new TextEncoder().encode(input));
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
   return [...new Uint8Array(digest)].map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
-// PBKDF2-SHA256, 120k iterations — stored as `pbkdf2$iter$saltB64$hashB64`
+// PBKDF2-SHA256, 100k iterations (Cloudflare Workers cap PBKDF2 at 100000) —
+// stored as `pbkdf2$iter$saltB64$hashB64`
 // (bcrypt is Node-only; Workers use WebCrypto.)
 export async function hashPassword(password) {
   const salt = new Uint8Array(16);
   crypto.getRandomValues(salt);
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
     key,
     256,
   );
   const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
-  return `pbkdf2$120000$${b64(salt.buffer)}$${b64(bits)}`;
+  return `pbkdf2$100000$${b64(salt.buffer)}$${b64(bits)}`;
 }
 
 export async function verifyPassword(password, stored) {
@@ -36,7 +37,7 @@ export async function verifyPassword(password, stored) {
     if (!stored || typeof stored !== 'string') return false;
     if (stored.startsWith('$2')) return false; // non-PBKDF2 hash (unverifiable here)
     const [, iterStr, saltB64, hashB64] = stored.split('$');
-    const iterations = parseInt(iterStr, 10) || 120000;
+    const iterations = parseInt(iterStr, 10) || 100000;
     const bin = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
     const salt = bin(saltB64);
     const expected = bin(hashB64);

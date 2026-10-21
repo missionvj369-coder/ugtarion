@@ -163,7 +163,7 @@ export default {
               },
               to: [{ email: String(email).trim() }],
               templateId: parseInt(env.BREVO_TEMPLATE_ID || '1', 10),
-              params: { resetLink },
+              params: { resetLink, RESET_URL: resetLink, EMAIL: String(email).trim() },
             }),
           });
           if (!res.ok) return err(await res.text(), 400);
@@ -204,7 +204,7 @@ export default {
                 },
                 to: [{ email: profile.email }],
                 templateId: parseInt(env.BREVO_TEMPLATE_ID || '1', 10),
-                params: { resetLink },
+                params: { resetLink, RESET_URL: resetLink, EMAIL: profile.email, USER_NAME: profile.name },
               }),
             });
             if (!res.ok) console.log(`[password-reset] email failed: ${await res.text()}`);
