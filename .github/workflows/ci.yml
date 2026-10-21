@@ -11,19 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
       - name: Install
         run: npm ci
       - name: Lint (optional)
         run: echo "No linter configured"
       - name: Build
         run: npm run build
+      - name: Validate Worker config (needs dist/ built above)
+        run: npx wrangler deploy --dry-run
       - name: Audit
         run: npm audit --audit-level=moderate || true
       - name: Upload artifact
