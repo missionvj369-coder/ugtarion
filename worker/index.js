@@ -147,7 +147,7 @@ export default {
         const { email, resetToken } = await readJson(request);
         if (!email) return err('Email is required', 400);
         const appUrl = env.APP_URL || url.origin;
-        const resetLink = `${String(appUrl).replace(/\/$/, '')}/reset-password?token=${resetToken || ''}`;
+        const resetLink = `${String(appUrl).replace(/\/$/, '')}/password-reset?token=${resetToken || ''}`;
         if (env.BREVO_API_KEY) {
           const res = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
@@ -163,7 +163,7 @@ export default {
               },
               to: [{ email: String(email).trim() }],
               templateId: parseInt(env.BREVO_TEMPLATE_ID || '1', 10),
-              params: { resetLink, RESET_URL: resetLink, EMAIL: String(email).trim() },
+              params: { resetLink, RESET_URL: resetLink, RESET_LINK: resetLink, URL: resetLink, LINK: resetLink, reset_url: resetLink, EMAIL: String(email).trim() },
             }),
           });
           if (!res.ok) return err(await res.text(), 400);
@@ -187,7 +187,7 @@ export default {
         if (!profile) return ok(generic);
         const { token } = await createPasswordReset(env.DB, profile.id, identifier);
         const base = String(body.redirect_url || '').trim() || env.APP_URL || url.origin;
-        const resetLink = `${String(base).replace(/\/$/, '')}/reset-password?token=${token}`;
+        const resetLink = `${String(base).replace(/\/$/, '')}/password-reset?token=${token}`;
         if (env.BREVO_API_KEY) {
           try {
             const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -204,7 +204,7 @@ export default {
                 },
                 to: [{ email: profile.email }],
                 templateId: parseInt(env.BREVO_TEMPLATE_ID || '1', 10),
-                params: { resetLink, RESET_URL: resetLink, EMAIL: profile.email, USER_NAME: profile.name },
+                params: { resetLink, RESET_URL: resetLink, RESET_LINK: resetLink, URL: resetLink, LINK: resetLink, reset_url: resetLink, EMAIL: profile.email, USER_NAME: profile.name },
               }),
             });
             if (!res.ok) console.log(`[password-reset] email failed: ${await res.text()}`);

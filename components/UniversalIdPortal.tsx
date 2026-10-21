@@ -846,7 +846,7 @@ const UniversalIdPortal: React.FC<UniversalIdPortalProps> = ({
     }
 
     try {
-      await requestPasswordReset(forgotIdentifier.trim().toLowerCase());
+      await requestPasswordReset(forgotIdentifier.trim().toLowerCase(), window.location.origin);
       setForgotStep(2);
       setSuccess('If an account exists, a password reset link has been sent.');
     } catch (err: any) {
