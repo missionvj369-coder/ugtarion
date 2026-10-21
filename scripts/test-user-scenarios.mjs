@@ -21,8 +21,8 @@ const b64 = (b) => Buffer.from(b).toString('base64');
 const unb64 = (s) => Buffer.from(s, 'base64');
 function hashPw(pw) {
   const salt = randomBytes(16);
-  const h = pbkdf2Sync(pw, salt, 120000, 32, 'sha256');
-  return `pbkdf2$120000$${b64(salt)}$${b64(h)}`;
+  const h = pbkdf2Sync(pw, salt, 100000, 32, 'sha256');
+  return `pbkdf2$100000$${b64(salt)}$${b64(h)}`;
 }
 function verifyPw(pw, stored) {
   try {
